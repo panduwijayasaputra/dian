@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth'
+import { chunkText } from '@/lib/chunk-text'
 import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
 import { generateSummary } from '@/lib/generate-summary'
 import { extractTextFromR2 } from '@/lib/pdf'
@@ -71,6 +72,17 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
       status: 'REVIEW',
     },
   })
+
+  const chunks = chunkText(text)
+  if (chunks.length > 0) {
+    try {
+      await prisma.documentChunk.createMany({
+        data: chunks.map((content, chunkIndex) => ({ documentId, content, chunkIndex })),
+      })
+    } catch (err) {
+      console.error('[chunk] Failed to store chunks:', err)
+    }
+  }
 
   const updated = await prisma.document.findUniqueOrThrow({ where: { id: documentId } })
   return { success: true, result, document: updated }

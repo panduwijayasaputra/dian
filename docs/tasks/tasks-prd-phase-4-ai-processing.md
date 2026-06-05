@@ -85,7 +85,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
       ```
     - After the `prisma.document.update(...)` call, return the updated document. Callers in `metadata-review-sheet.tsx` can ignore the `document` field for now.
 
-- [ ] 3.0 Generate and store document summary via OpenAI (WO-012)
+- [x] 3.0 Generate and store document summary via OpenAI (WO-012)
   - [x] 3.1 Create `src/lib/generate-summary.ts`
     - Create a new file with `import 'server-only'` at the top
     - Export an async function `generateSummary(text: string): Promise<string | null>`
@@ -110,7 +110,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
     - This call is already inside the action — if it throws (which it won't, due to the try/catch in the lib), the action will still continue due to the outer structure
 
 - [ ] 4.0 Implement document chunking (WO-013)
-  - [ ] 4.1 Create `src/lib/chunk-text.ts`
+  - [x] 4.1 Create `src/lib/chunk-text.ts`
     - Create a new file (no `server-only` needed — this is a pure utility)
     - Export a function `chunkText(text: string): string[]`
     - Define constants: `CHUNK_SIZE = 2000` (characters, ≈ 500 tokens) and `OVERLAP = 400` (characters, ≈ 100 tokens)
@@ -126,7 +126,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
       return chunks
       ```
     - This produces no external dependencies and no async calls
-  - [ ] 4.2 Call `chunkText` and store `DocumentChunk` records inside `extractDocumentMetadata`
+  - [x] 4.2 Call `chunkText` and store `DocumentChunk` records inside `extractDocumentMetadata`
     - Import `chunkText` from `@/lib/chunk-text` in `src/app/(app)/documents/actions.ts`
     - After the summary generation step, add:
       ```ts
