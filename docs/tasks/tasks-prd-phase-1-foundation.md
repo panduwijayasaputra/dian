@@ -168,7 +168,7 @@
     - Install ts-node: `pnpm add -D ts-node`
     - Run `pnpm prisma db seed` to verify it runs without errors and the admin user appears in Prisma Studio.
 
-- [ ] 4.0 Implement authentication with Auth.js v5 (WO-003)
+- [x] 4.0 Implement authentication with Auth.js v5 (WO-003)
   - [x] 4.1 Install Auth.js v5
     - Run: `pnpm add next-auth@beta`
     - Add `AUTH_SECRET` to `.env` (generate with: `openssl rand -base64 32`).
@@ -242,7 +242,7 @@
     - This protects all routes except `/login`, static assets, and API routes. Unauthenticated requests are redirected to `/login` (configured via `pages.signIn` in `auth.ts`).
 
 - [ ] 5.0 Build login UI, app shell, and route protection (WO-003 + WO-001)
-  - [ ] 5.1 Create the login Server Action
+  - [x] 5.1 Create the login Server Action
     - Create `src/app/(auth)/login/actions.ts`:
 
       ```ts
@@ -267,7 +267,7 @@
       }
       ```
 
-  - [ ] 5.2 Create the login page
+  - [x] 5.2 Create the login page
     - Create `src/app/(auth)/login/page.tsx`.
     - Layout: full-screen centered, white card using shadcn `Card`.
     - Contents of the card (top to bottom):
@@ -279,7 +279,7 @@
       6. Submit `Button` with text `"Masuk"`.
     - The form must call the `loginAction` Server Action on submit.
     - This page must be accessible without authentication.
-  - [ ] 5.3 Create the logout Server Action and button
+  - [x] 5.3 Create the logout Server Action and button
     - Create `src/components/auth/logout-button.tsx`:
 
       ```tsx
@@ -302,14 +302,14 @@
       }
       ```
 
-  - [ ] 5.4 Create the app shell layout
+  - [x] 5.4 Create the app shell layout
     - Create `src/app/(app)/layout.tsx`.
     - Renders a top navigation bar containing:
       - Left: `"DIAN"` wordmark text.
       - Right: `<LogoutButton />` component.
     - Renders `{children}` below the nav bar.
     - This layout applies to all pages inside the `(app)` route group, which are protected by middleware.
-  - [ ] 5.5 Move home page into the (app) route group
+  - [x] 5.5 Move home page into the (app) route group
     - Move `src/app/page.tsx` to `src/app/(app)/page.tsx`.
     - Update the placeholder content: centered `<h1>` reading `"Selamat datang di DIAN"`.
     - Verify: visiting `http://localhost:3000` while logged out redirects to `/login`.
