@@ -15,9 +15,12 @@ export default async function SearchPage({
   const params = await searchParams
   const debug = params.debug === '1'
 
+  const isAdmin = session.user.role === 'ADMIN'
+  const divisionId = isAdmin ? null : (session.user.divisionId ?? null)
+
   return (
     <div>
-      <SearchView debug={debug} />
+      <SearchView debug={debug} divisionId={divisionId} />
     </div>
   )
 }

@@ -15,6 +15,7 @@ export interface LocalDocument {
   original_name: string | null
   created_at: string      // ISO datetime
   synced_at: string | null  // ISO datetime
+  division_ids: string[]
 }
 
 interface DianDB {
@@ -35,12 +36,16 @@ export function openDB(): Promise<IDBPDatabase<DianDB>> | null {
   if (typeof window === 'undefined') return null
 
   if (!dbPromise) {
-    dbPromise = idbOpen<DianDB>('dian-db', 1, {
-      upgrade(db) {
-        const store = db.createObjectStore('documents', { keyPath: 'id' })
-        store.createIndex('by_status', 'status')
-        store.createIndex('by_sender', 'sender')
-        store.createIndex('by_date', 'document_date')
+    dbPromise = idbOpen<DianDB>('dian-db', 2, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const store = db.createObjectStore('documents', { keyPath: 'id' })
+          store.createIndex('by_status', 'status')
+          store.createIndex('by_sender', 'sender')
+          store.createIndex('by_date', 'document_date')
+        }
+        // v2: division_ids field added to LocalDocument — no structural store change needed;
+        // existing records without the field will have it default to [] at read time.
       },
     })
   }
@@ -75,8 +80,14 @@ export async function deleteDocument(id: string): Promise<void> {
 export async function queryDocuments(
   query: string,
   filters: SearchFilters,
+  divisionId: string | null = null,
 ): Promise<LocalDocument[]> {
   let docs = await listDocuments()
+
+  // Filter by division for regular users; null means admin (no filter).
+  if (divisionId !== null) {
+    docs = docs.filter((d) => (d.division_ids ?? []).includes(divisionId))
+  }
 
   const lower = (v: string | null | undefined) => (v ?? '').toLowerCase()
   const includes = (field: string | null, term: string) =>

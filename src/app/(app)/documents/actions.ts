@@ -261,8 +261,13 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
   const session = await auth()
   if (!session?.user?.id) return { success: false }
 
+  const isAdmin = session.user.role === 'ADMIN'
+  const divisionId = session.user.divisionId ?? null
+
   const docs = await prisma.document.findMany({
-    where: { userId: session.user.id },
+    where: isAdmin
+      ? { status: { not: 'LOCAL' } }
+      : { divisions: { some: { divisionId: divisionId ?? '' } } },
     select: {
       id: true,
       documentNumber: true,
@@ -274,6 +279,7 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
       r2Key: true,
       status: true,
       createdAt: true,
+      divisions: { select: { divisionId: true } },
     },
   })
 
@@ -293,6 +299,7 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
     original_name: null,
     created_at: doc.createdAt.toISOString(),
     synced_at: now,
+    division_ids: doc.divisions.map((d) => d.divisionId),
   }))
 
   return { success: true, documents }

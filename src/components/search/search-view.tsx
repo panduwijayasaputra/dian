@@ -13,7 +13,7 @@ import { SearchResultCard } from '@/components/search/search-result-card'
 
 export type { SearchFilters, SearchResult }
 
-export function SearchView({ debug: _debug }: { debug?: boolean }) {
+export function SearchView({ debug: _debug, divisionId = null }: { debug?: boolean; divisionId?: string | null }) {
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({})
   const [results, setResults] = useState<SearchResult[]>([])
@@ -49,7 +49,7 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
     setIsLoading(true)
     try {
       if (!navigator.onLine) {
-        const localResults = await queryDocuments(searchQuery, searchFilters)
+        const localResults = await queryDocuments(searchQuery, searchFilters, divisionId)
         setResults(
           localResults.map((doc) => ({
             id: doc.id,
@@ -79,7 +79,7 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
       setIsLoading(false)
       setHasSearched(true)
     }
-  }, [])
+  }, [divisionId])
 
   // Re-run search when filters change after the first search.
   // startTransition defers setState calls so they don't run synchronously

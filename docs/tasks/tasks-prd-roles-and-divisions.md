@@ -202,19 +202,19 @@ Based on: `docs/prd/prd-roles-and-divisions.md`
     - Render `DivisionSelect` in the form only if the user is admin.
     - On save, call an updated server action that also persists the new `divisionIds` (same replace-all approach as 4.5).
 
-- [ ] 5.0 Offline Division Filtering (IndexedDB)
-  - [ ] 5.1 Update `LocalDocument` interface in `src/lib/idb.ts`
+- [x] 5.0 Offline Division Filtering (IndexedDB)
+  - [x] 5.1 Update `LocalDocument` interface in `src/lib/idb.ts`
     - Add `division_ids: string[]` to the `LocalDocument` interface. Default to `[]` for documents that have no divisions.
-  - [ ] 5.2 Increment the IndexedDB version and handle the upgrade
+  - [x] 5.2 Increment the IndexedDB version and handle the upgrade
     - Change `idbOpen<DianDB>('dian-db', 1, ...)` to version `2`.
     - In the `upgrade` function, add a version check: `if (oldVersion < 2) { /* no structural change needed; new field defaults to [] */ }`. This ensures existing documents (which lack `division_ids`) are still readable — access code must default `division_ids` to `[]` when the field is undefined.
-  - [ ] 5.3 Update `queryDocuments` in `src/lib/idb.ts` to accept and apply a division filter
+  - [x] 5.3 Update `queryDocuments` in `src/lib/idb.ts` to accept and apply a division filter
     - Add a `divisionId: string | null` parameter to the function signature.
     - After fetching all documents matching the query/filter, add a final filter step: if `divisionId` is not null, keep only documents where `doc.division_ids.includes(divisionId)`.
     - If `divisionId` is null (admin), return all results unfiltered.
-  - [ ] 5.4 Update `src/lib/sync.ts` to include `division_ids` when syncing from server
+  - [x] 5.4 Update `src/lib/sync.ts` to include `division_ids` when syncing from server
     - In the sync function that pulls documents from the server and writes them to IndexedDB, add a query to include `divisions` (the `DocumentDivision` relation) when fetching documents from Prisma.
     - Map the result to extract the array of `divisionId` strings and assign it as `division_ids` on the `LocalDocument` before calling `upsertDocument`.
-  - [ ] 5.5 Pass the user's `divisionId` to the offline search caller
+  - [x] 5.5 Pass the user's `divisionId` to the offline search caller
     - In the client component that calls `queryDocuments` for offline search (in `src/app/(app)/search/page.tsx` or `search-view.tsx`), read the user's `divisionId` from the session (via `useSession()` or a server prop).
     - Pass `divisionId` (or `null` for admin) as an argument to `queryDocuments`.
