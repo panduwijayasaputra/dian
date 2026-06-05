@@ -63,8 +63,8 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
       </Link>
       ```
 
-- [ ] 2.0 Metadata filtering (WO-016) — server action, filter panel, active chips
-  - [ ] 2.1 Create `src/app/(app)/search/actions.ts` with the `searchDocuments` server action signature and metadata-only path
+- [x] 2.0 Metadata filtering (WO-016) — server action, filter panel, active chips
+  - [x] 2.1 Create `src/app/(app)/search/actions.ts` with the `searchDocuments` server action signature and metadata-only path
     - Add `'use server'` at the top.
     - Import `auth` from `@/auth` and `prisma` from `@/lib/prisma`.
     - Define types:
@@ -108,13 +108,13 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
       - `orderBy: { documentDate: 'desc' }` and `take: 20`
       - Select only the fields in `SearchResult` (id, documentNumber, sender, subject, documentDate, summary, extractedText, r2Key)
     - Map results to `SearchResult[]` (no `similarity`) and return `{ success: true, results, isNLInterpreted: false }`.
-  - [ ] 2.2 Create `src/components/search/search-bar.tsx`
+  - [x] 2.2 Create `src/components/search/search-bar.tsx`
     - Client component with an `<Input>` and a `<Button type="submit">`.
     - Props: `value: string`, `onChange: (v: string) => void`, `onSubmit: () => void`, `isLoading: boolean`, `disabled?: boolean`.
     - Render a `<form onSubmit={...}>` that calls `onSubmit()` on submit.
     - Show a loading spinner or disable the button while `isLoading` is true.
     - Placeholder text: `"Cari dokumen... (contoh: surat dari Kementerian Keuangan)"`.
-  - [ ] 2.3 Create `src/components/search/filter-panel.tsx`
+  - [x] 2.3 Create `src/components/search/filter-panel.tsx`
     - Client component.
     - Props: `filters: SearchFilters`, `onChange: (filters: SearchFilters) => void`.
     - Render active filters as dismissible chips (shadcn `Badge` with an `✕` button).
@@ -125,7 +125,7 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
       - Show a list of available filter fields not yet active: Document Number, Pengirim (Sender), Perihal (Subject), Tanggal (Date range).
       - Selecting a field shows an inline `Input` (or two `Calendar` date pickers for Tanggal) to enter the value.
       - On confirm (Enter or a small "Terapkan" button), call `onChange({ ...filters, [selectedField]: enteredValue })` and close the Popover.
-  - [ ] 2.4 Wire `SearchBar`, `FilterPanel`, and `searchDocuments` together in `SearchView`
+  - [x] 2.4 Wire `SearchBar`, `FilterPanel`, and `searchDocuments` together in `SearchView`
     - Pass `query` / `setQuery` to `<SearchBar>`.
     - Pass `filters` / `setFilters` to `<FilterPanel>`.
     - In `SearchView`, define `handleSearch`: set `isLoading = true`, call `searchDocuments(query, filters)`, set `results`, `isNLInterpreted`, `hasSearched = true`, then `isLoading = false`.
