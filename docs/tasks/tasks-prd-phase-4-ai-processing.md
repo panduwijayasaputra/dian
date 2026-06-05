@@ -62,7 +62,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
     - Verify the migration completes without errors
     - Verify the Prisma client is regenerated (it runs automatically after migrate dev)
 
-- [ ] 2.0 Ensure extractedText is in the document return payload (WO-011)
+- [x] 2.0 Ensure extractedText is in the document return payload (WO-011)
   - [x] 2.1 Update `extractDocumentMetadata` to return the full document alongside the extraction result
     - In `src/app/(app)/documents/actions.ts`, change the `ExtractResult` type to include the full document:
       ```ts
@@ -86,7 +86,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
     - After the `prisma.document.update(...)` call, return the updated document. Callers in `metadata-review-sheet.tsx` can ignore the `document` field for now.
 
 - [ ] 3.0 Generate and store document summary via OpenAI (WO-012)
-  - [ ] 3.1 Create `src/lib/generate-summary.ts`
+  - [x] 3.1 Create `src/lib/generate-summary.ts`
     - Create a new file with `import 'server-only'` at the top
     - Export an async function `generateSummary(text: string): Promise<string | null>`
     - If `text.trim()` is empty, return `null` immediately
@@ -100,7 +100,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
       Write a factual, neutral 2–3 sentence abstract of the document's main content.
       Use the same language as the document. Do not add opinions or recommendations.
       ```
-  - [ ] 3.2 Call `generateSummary` inside `extractDocumentMetadata`
+  - [x] 3.2 Call `generateSummary` inside `extractDocumentMetadata`
     - In `src/app/(app)/documents/actions.ts`, import `generateSummary` from `@/lib/generate-summary`
     - After the existing `extractTextFromR2` and `extractMetadataFromText` calls, add:
       ```ts

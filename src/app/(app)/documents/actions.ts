@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth'
 import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
+import { generateSummary } from '@/lib/generate-summary'
 import { extractTextFromR2 } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
@@ -59,12 +60,14 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
 
   const text = await extractTextFromR2(document.r2Key)
   const result = await extractMetadataFromText(text)
+  const summary = await generateSummary(text)
 
   await prisma.document.update({
     where: { id: documentId },
     data: {
       extractedText: text || null,
       extractionResult: result as object,
+      summary,
       status: 'REVIEW',
     },
   })
