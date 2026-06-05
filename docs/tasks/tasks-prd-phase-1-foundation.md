@@ -241,7 +241,7 @@
 
     - This protects all routes except `/login`, static assets, and API routes. Unauthenticated requests are redirected to `/login` (configured via `pages.signIn` in `auth.ts`).
 
-- [ ] 5.0 Build login UI, app shell, and route protection (WO-003 + WO-001)
+- [x] 5.0 Build login UI, app shell, and route protection (WO-003 + WO-001)
   - [x] 5.1 Create the login Server Action
     - Create `src/app/(auth)/login/actions.ts`:
 
