@@ -17,6 +17,16 @@ enum DocumentStatus {
   ERROR
 }
 
+enum DocumentType {
+  INCOMING_LETTER
+  OUTGOING_LETTER
+  DISPOSITION
+  MEMO
+  REPORT
+  DECREE
+  OTHER
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -33,6 +43,7 @@ model Document {
   user           User           @relation(fields: [userId], references: [id])
   r2Key          String?
   status         DocumentStatus @default(UPLOADING)
+  documentType   DocumentType?
   documentNumber String?
   documentDate   DateTime?
   sender         String?
