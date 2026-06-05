@@ -12,8 +12,8 @@
 - `prisma/migrations/` — Auto-generated migration SQL files.
 - `src/generated/prisma/` — Auto-generated Prisma client (gitignored, do not edit).
 - `src/lib/prisma.ts` — Prisma client singleton. Import: `from '@/generated/prisma'` (Prisma 7).
-- `auth.ts` — Auth.js v5 configuration: Credentials provider, bcrypt verify, JWT session.
-- `middleware.ts` — Route protection: redirects unauthenticated users to `/login`.
+- `src/auth.ts` — Auth.js v5 configuration: Credentials provider, bcrypt verify, JWT session. Lives in src/ so @/auth alias resolves correctly.
+- `src/proxy.ts` — Route protection (Next.js 16): reads JWT from cookie via next-auth/jwt, redirects unauthenticated users to `/login`. No Prisma — Edge Runtime safe.
 - `src/app/api/auth/[...nextauth]/route.ts` — Auth.js HTTP handler.
 - `src/app/(auth)/login/page.tsx` — Login page with DIAN wordmark and form.
 - `src/app/(auth)/login/actions.ts` — Server Action for form submission and signIn call.
@@ -109,7 +109,7 @@
       - `"db:studio": "prisma studio"`
       - `"db:generate": "prisma generate"`
 
-- [ ] 3.0 Create users table, migration, and seed script (WO-002)
+- [x] 3.0 Create users table, migration, and seed script (WO-002)
   - [x] 3.1 Define the User model in Prisma schema
     - Add the following model to `prisma/schema.prisma`:
       ```prisma
@@ -169,12 +169,12 @@
     - Run `pnpm prisma db seed` to verify it runs without errors and the admin user appears in Prisma Studio.
 
 - [ ] 4.0 Implement authentication with Auth.js v5 (WO-003)
-  - [ ] 4.1 Install Auth.js v5
+  - [x] 4.1 Install Auth.js v5
     - Run: `pnpm add next-auth@beta`
     - Add `AUTH_SECRET` to `.env` (generate with: `openssl rand -base64 32`).
     - Add `AUTH_URL="http://localhost:3000"` to `.env`.
     - Add both variables to `.env.example` with placeholder values.
-  - [ ] 4.2 Create `auth.ts` at the project root
+  - [x] 4.2 Create `auth.ts` at the project root
     - Create `auth.ts`:
 
       ```ts
@@ -209,7 +209,7 @@
 
     - Note: `email` in the returned user object is mapped to `username` as a workaround — Auth.js v5 requires an `email` field in the user object. The actual value is the username string.
 
-  - [ ] 4.3 Create the Prisma client singleton
+  - [x] 4.3 Create the Prisma client singleton
     - Create `src/lib/prisma.ts`:
 
       ```ts
@@ -222,13 +222,13 @@
       if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
       ```
 
-  - [ ] 4.4 Create the Auth.js API route handler
+  - [x] 4.4 Create the Auth.js API route handler
     - Create `src/app/api/auth/[...nextauth]/route.ts`:
       ```ts
       import { handlers } from '@/auth'
       export const { GET, POST } = handlers
       ```
-  - [ ] 4.5 Create `middleware.ts` for route protection
+  - [x] 4.5 Create `middleware.ts` for route protection
     - Create `middleware.ts` at the project root:
 
       ```ts
