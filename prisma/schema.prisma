@@ -9,6 +9,11 @@ datasource db {
   extensions = [pgvector(map: "vector")]
 }
 
+enum Role {
+  ADMIN
+  USER
+}
+
 enum DocumentStatus {
   LOCAL
   UPLOADING
@@ -41,9 +46,21 @@ model User {
   name         String
   username     String     @unique
   passwordHash String
+  role         Role       @default(USER)
+  isActive     Boolean    @default(true) @map("is_active")
+  divisionId   String?    @map("division_id")
+  division     Division?  @relation(fields: [divisionId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   documents    Document[]
+}
+
+model Division {
+  id                String             @id @default(cuid())
+  name              String             @unique
+  createdAt         DateTime           @default(now())
+  users             User[]
+  documentDivisions DocumentDivision[]
 }
 
 model Document {
@@ -62,10 +79,21 @@ model Document {
   extractedText    String?
   extractionResult Json?
   summary          String?
-  embeddingStatus  EmbeddingStatus @default(PENDING)
+  embeddingStatus  EmbeddingStatus  @default(PENDING)
   chunks           DocumentChunk[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  divisions        DocumentDivision[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model DocumentDivision {
+  id         String   @id @default(cuid())
+  documentId String   @map("document_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  divisionId String   @map("division_id")
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, divisionId])
 }
 
 model DocumentChunk {
