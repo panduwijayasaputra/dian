@@ -156,13 +156,13 @@
     - On success: briefly show a "Uploaded successfully" message, then either redirect to `/documents` or begin the next queued upload.
     - On error: show the error message returned by the Server Action with a "Retry" button that re-submits the same file.
 
-- [ ] 4.0 Documents List Page — Build `/documents` page with table, status badges, and empty state
-  - [ ] 4.1 Create the documents page route at `src/app/(app)/documents/page.tsx`
+- [x] 4.0 Documents List Page — Build `/documents` page with table, status badges, and empty state
+  - [x] 4.1 Create the documents page route at `src/app/(app)/documents/page.tsx`
     - Create the directory `src/app/(app)/documents/`.
     - Create `page.tsx` as a Server Component.
     - Fetch all documents for the current user from the database using Prisma, ordered by `createdAt` descending.
     - Pass the documents array as a prop to `DocumentsTable` (4.2).
-  - [ ] 4.2 Create `DocumentsTable` component at `src/components/documents/documents-table.tsx`
+  - [x] 4.2 Create `DocumentsTable` component at `src/components/documents/documents-table.tsx`
     - Accepts `documents: Document[]` as a prop.
     - Render a `<table>` (or shadcn/ui `Table` component) with these columns:
       - **Document Number** — show `document.documentNumber ?? "—"` (dash if not yet filled)
@@ -172,7 +172,7 @@
       - **Status** — render `<StatusBadge status={document.status} />`
       - **Actions** — render a "View" button (wired in task 5.0)
     - If `documents.length === 0`, render the empty state (4.4) instead of the table.
-  - [ ] 4.3 Create `StatusBadge` component at `src/components/documents/status-badge.tsx`
+  - [x] 4.3 Create `StatusBadge` and `DocumentTypeBadge` components
     - Accepts `status: DocumentStatus` as a prop.
     - Render a `<span>` or shadcn/ui `Badge` with label and color based on status:
       - `LOCAL` → gray → "Saved Locally"
@@ -180,12 +180,12 @@
       - `PROCESSING` → amber → "Processing"
       - `READY` → green → "Ready"
       - `ERROR` → red → "Error"
-  - [ ] 4.4 Add empty state to `DocumentsTable`
+  - [x] 4.4 Add empty state to `DocumentsTable`
     - When `documents.length === 0`, render a centered empty state with:
       - An icon (e.g., a document or inbox icon from lucide-react).
       - Text: "No documents yet."
       - A link/button: "Upload your first document" that navigates to `/upload`.
-  - [ ] 4.5 Add navigation links to the app shell
+  - [x] 4.5 Add navigation links to the app shell
     - Open `src/app/(app)/layout.tsx`.
     - Add navigation links for "Documents" (`/documents`) and "Upload" (`/upload`) to the existing app shell/sidebar/nav bar.
 
