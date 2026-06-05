@@ -13,6 +13,8 @@ enum DocumentStatus {
   LOCAL
   UPLOADING
   PROCESSING
+  EXTRACTING
+  REVIEW
   READY
   ERROR
 }
@@ -48,8 +50,10 @@ model Document {
   documentDate   DateTime?
   sender         String?
   subject        String?
-  fileSizeBytes  Int?
-  originalName   String?
-  createdAt      DateTime       @default(now())
+  fileSizeBytes    Int?
+  originalName     String?
+  extractedText    String?
+  extractionResult Json?
+  createdAt        DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 }
