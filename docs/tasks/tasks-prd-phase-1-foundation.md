@@ -74,7 +74,7 @@
     - Create `README.md` with these sections: Prerequisites, Installation, Environment Setup, Database Setup, Running the Dev Server. Instructions must allow a new developer to get from `git clone` to a running app.
     - Add `.env` to `.gitignore` if not already there.
 
-- [ ] 2.0 Configure Prisma with PostgreSQL and pgvector (WO-002)
+- [x] 2.0 Configure Prisma with PostgreSQL and pgvector (WO-002)
   - [x] 2.1 Install Prisma and initialise
     - Run: `pnpm add -D prisma` and `pnpm add @prisma/client`
     - Run: `pnpm prisma init`
@@ -110,7 +110,7 @@
       - `"db:generate": "prisma generate"`
 
 - [ ] 3.0 Create users table, migration, and seed script (WO-002)
-  - [ ] 3.1 Define the User model in Prisma schema
+  - [x] 3.1 Define the User model in Prisma schema
     - Add the following model to `prisma/schema.prisma`:
       ```prisma
       model User {
@@ -122,12 +122,12 @@
         updatedAt    DateTime @updatedAt
       }
       ```
-  - [ ] 3.2 Create and apply the initial migration
+  - [x] 3.2 Create and apply the initial migration
     - Run: `pnpm prisma migrate dev --name init`
     - This creates `prisma/migrations/<timestamp>_init/migration.sql` and applies it to your local database.
     - Run `pnpm prisma generate` to regenerate the Prisma client with the new model.
     - Verify the `users` table exists by opening Prisma Studio: `pnpm db:studio`
-  - [ ] 3.3 Write the seed script
+  - [x] 3.3 Write the seed script
     - Install bcryptjs: `pnpm add bcryptjs` and `pnpm add -D @types/bcryptjs`
     - Create `prisma/seed.ts`:
 
