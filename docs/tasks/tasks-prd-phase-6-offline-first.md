@@ -32,7 +32,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
 
 ## Tasks
 
-- [ ] 1.0 PWA Manifest & Install Prompt
+- [x] 1.0 PWA Manifest & Install Prompt
   - [x] 1.1 Create icon assets
     - Create the directory `public/icons/`.
     - Add two PNG icon files: `icon-192.png` (192×192 px) and `icon-512.png` (512×512 px). For MVP, a simple solid-colour PNG with "D" text is fine. These files must exist for the PWA installability audit to pass.
@@ -82,7 +82,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Place `<InstallPrompt />` in the right side of the nav `<div>`, between the nav links block and `<LogoutButton />`.
 
 - [ ] 2.0 Service Worker & App Shell Caching
-  - [ ] 2.1 Create `public/sw.js`
+  - [x] 2.1 Create `public/sw.js`
     - Define a cache name constant: `const CACHE_NAME = 'dian-v1'`.
     - Define an array of assets to pre-cache on install: `['/offline', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png']`.
     - **`install` event handler:**
@@ -98,7 +98,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       - If the request URL pathname starts with `/_next/static/`, use **cache-first**: check the cache, return if found; otherwise fetch from network, clone the response, store it in the cache, and return it.
       - For all other GET requests (navigation and other static files in `/public`), use **network-first**: try `fetch(event.request)`, cache the successful response, return it. On network failure, check the cache. If the cache also misses and the request is a navigation (`request.mode === 'navigate'`), return the cached `/offline` page. Otherwise, let the error propagate.
 
-  - [ ] 2.2 Register the service worker in the root layout
+  - [x] 2.2 Register the service worker in the root layout
     - Open `src/app/layout.tsx`.
     - Import `Script` from `next/script`.
     - Add a `<Script>` tag with `strategy="afterInteractive"` containing inline JS:
