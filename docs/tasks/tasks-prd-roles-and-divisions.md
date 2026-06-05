@@ -12,9 +12,11 @@ Based on: `docs/prd/prd-roles-and-divisions.md`
 - `src/proxy.ts` - Extended with role-based route guards for `/admin/*` and `/upload/*` (admin only).
 - `src/app/(admin)/layout.tsx` - NEW: Admin section layout with admin nav.
 - `src/app/(admin)/admin/page.tsx` - NEW: Admin dashboard redirect.
-- `src/app/(admin)/admin/divisions/page.tsx` - NEW: Division list with create/edit/delete UI.
+- `src/app/(admin)/admin/divisions/page.tsx` - NEW: Division list page (server component).
+- `src/app/(admin)/admin/divisions/divisions-client.tsx` - NEW: Division list client component with create/edit/delete UI.
 - `src/app/(admin)/admin/divisions/actions.ts` - NEW: Server actions for division CRUD.
-- `src/app/(admin)/admin/users/page.tsx` - NEW: User list with create/edit/toggle-active UI.
+- `src/app/(admin)/admin/users/page.tsx` - NEW: User list page (server component).
+- `src/app/(admin)/admin/users/users-client.tsx` - NEW: User list client component with create/edit/toggle-active UI.
 - `src/app/(admin)/admin/users/actions.ts` - NEW: Server actions for user CRUD and toggle active.
 - `src/components/admin/division-form.tsx` - NEW: Create/edit division form.
 - `src/components/admin/division-table.tsx` - NEW: Division table with edit/delete actions.
@@ -118,41 +120,41 @@ Based on: `docs/prd/prd-roles-and-divisions.md`
     - All other `(app)` routes: if not authenticated, redirect to `/login`.
     - Export a `config` with `matcher` to apply middleware to `/(app)/*`, `/admin/*`, `/upload/*`.
 
-- [ ] 3.0 Admin Panel (Divisions & Users)
-  - [ ] 3.1 Create the `(admin)` route group with layout and dashboard page
+- [x] 3.0 Admin Panel (Divisions & Users)
+  - [x] 3.1 Create the `(admin)` route group with layout and dashboard page
     - Create `src/app/(admin)/layout.tsx` — a simple layout with an admin nav header containing links to `/admin/divisions` and `/admin/users`, plus a "Back to App" link.
     - Create `src/app/(admin)/admin/page.tsx` — immediately redirects to `/admin/divisions` using `redirect('/admin/divisions')`.
-  - [ ] 3.2 Create division server actions in `src/app/(admin)/admin/divisions/actions.ts`
+  - [x] 3.2 Create division server actions in `src/app/(admin)/admin/divisions/actions.ts`
     - `getDivisions()`: return all divisions ordered by name, each including `_count` of users and `_count` of documentDivisions.
     - `createDivision(name: string)`: validate name is non-empty, create the division, return `{ success, error? }`.
     - `updateDivision(id: string, name: string)`: validate name is non-empty, update the division name, return `{ success, error? }`.
     - `deleteDivision(id: string)`: before deleting, check if any users have this `divisionId` OR any `DocumentDivision` rows reference it. If yes, return `{ success: false, error: 'Divisi tidak dapat dihapus karena masih memiliki pengguna atau dokumen.' }`. If safe, delete and return `{ success: true }`.
     - All actions must call `auth()` and return an error if the caller is not `ADMIN`.
-  - [ ] 3.3 Create `src/components/admin/division-form.tsx`
+  - [x] 3.3 Create `src/components/admin/division-form.tsx`
     - A simple form component with a single `name` text input and a submit button.
     - Accepts props: `defaultValues?: { name: string }`, `onSubmit: (name: string) => Promise<void>`, `isSubmitting: boolean`, `submitLabel: string`.
-  - [ ] 3.4 Create `src/components/admin/division-table.tsx`
+  - [x] 3.4 Create `src/components/admin/division-table.tsx`
     - Renders a table of divisions with columns: Name, Users, Documents, Actions.
     - Actions column has "Edit" (opens inline edit mode or a dialog) and "Delete" buttons.
     - Delete button calls `deleteDivision` server action and shows a toast error if blocked.
-  - [ ] 3.5 Create division list page at `src/app/(admin)/admin/divisions/page.tsx`
+  - [x] 3.5 Create division list page at `src/app/(admin)/admin/divisions/page.tsx`
     - Server component that fetches divisions using `getDivisions()`.
     - Renders a "Tambah Divisi" button that opens a create form.
     - Renders `DivisionTable` with the fetched divisions.
-  - [ ] 3.6 Create user server actions in `src/app/(admin)/admin/users/actions.ts`
+  - [x] 3.6 Create user server actions in `src/app/(admin)/admin/users/actions.ts`
     - `getUsers()`: return all users including their division name, ordered by name.
     - `createUser({ name, username, password, role, divisionId })`: hash the password with bcrypt, create the user. If `role === 'USER'` and `divisionId` is null, return an error.
     - `updateUser(id, { name, username, role, divisionId })`: update the user's fields. Enforce the same rule: a `USER` role must have a `divisionId`.
     - `toggleUserActive(id)`: read current `isActive`, flip it, save.
     - All actions must call `auth()` and return an error if the caller is not `ADMIN`.
-  - [ ] 3.7 Create `src/components/admin/user-form.tsx`
+  - [x] 3.7 Create `src/components/admin/user-form.tsx`
     - Form fields: `name` (text), `username` (text), `password` (password — only shown when creating, not editing), `role` (select: Admin / User), `divisionId` (select — only shown when role is "User").
     - The division select should be populated from a `divisions` prop passed in.
     - Accepts props: `defaultValues?`, `onSubmit`, `isSubmitting`, `submitLabel`, `divisions`, `isEditing: boolean`.
-  - [ ] 3.8 Create `src/components/admin/user-table.tsx`
+  - [x] 3.8 Create `src/components/admin/user-table.tsx`
     - Table with columns: Name, Username, Role, Division, Status (Active/Inactive badge), Actions.
     - Actions: "Edit" button and "Aktifkan"/"Nonaktifkan" toggle button.
-  - [ ] 3.9 Create user list page at `src/app/(admin)/admin/users/page.tsx`
+  - [x] 3.9 Create user list page at `src/app/(admin)/admin/users/page.tsx`
     - Server component that fetches users and divisions.
     - Renders a "Tambah Pengguna" button.
     - Renders `UserTable`.
