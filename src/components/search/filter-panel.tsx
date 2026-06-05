@@ -5,11 +5,12 @@ import { format } from 'date-fns'
 import { id as idLocale } from 'date-fns/locale'
 import { CalendarIcon, Plus, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 import type { SearchFilters } from '@/app/(app)/search/actions'
 
 type FilterField = {
@@ -155,11 +156,9 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
             if (!next) resetPopover()
           }}
         >
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-              <Plus className="h-3 w-3" />
-              Tambah filter
-            </Button>
+          <PopoverTrigger className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'h-7 gap-1 text-xs')}>
+            <Plus className="h-3 w-3" />
+            Tambah filter
           </PopoverTrigger>
 
           <PopoverContent className="w-72 p-3" align="start">
@@ -187,7 +186,6 @@ export function FilterPanel({ filters, onChange }: FilterPanelProps) {
                     mode="single"
                     selected={dateFrom}
                     onSelect={setDateFrom}
-                    initialFocus
                   />
                 </div>
                 <div className="space-y-1">

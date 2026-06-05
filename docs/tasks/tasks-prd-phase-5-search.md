@@ -131,8 +131,8 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
     - In `SearchView`, define `handleSearch`: set `isLoading = true`, call `searchDocuments(query, filters)`, set `results`, `isNLInterpreted`, `hasSearched = true`, then `isLoading = false`.
     - Call `handleSearch` from `SearchBar.onSubmit` and also whenever `filters` changes (use `useEffect` on `filters` if `hasSearched` is already true, so filters re-run search after first query).
 
-- [ ] 3.0 Semantic search server action (WO-017) — query embedding + pgvector similarity
-  - [ ] 3.1 Add semantic search path to `searchDocuments` in `src/app/(app)/search/actions.ts`
+- [x] 3.0 Semantic search server action (WO-017) — query embedding + pgvector similarity
+  - [x] 3.1 Add semantic search path to `searchDocuments` in `src/app/(app)/search/actions.ts`
     - Import `generateEmbedding` from `@/lib/generate-embeddings`.
     - When `query` is non-empty and there are no active metadata filters, run the **semantic-only path**:
       - Call `const queryVector = await generateEmbedding(query)`.
@@ -160,7 +160,7 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
         ```
       - Cast `similarity` values from the raw query to `number` (they come back as strings from pg).
       - Return `{ success: true, results, isNLInterpreted: false }`.
-  - [ ] 3.2 Verify de-duplication and similarity threshold
+  - [x] 3.2 Verify de-duplication and similarity threshold
     - The `GROUP BY d.id` in the raw query already de-duplicates — a document with multiple matching chunks appears once with the best (MAX) similarity score.
     - The `>= 0.3` threshold filters out low-relevance results.
     - Confirm the query works by manually testing with a known document in the dev database (run the dev server: `pnpm dev`).

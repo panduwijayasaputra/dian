@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth'
+import { generateEmbedding } from '@/lib/generate-embeddings'
 import { prisma } from '@/lib/prisma'
 
 export type SearchFilters = {
@@ -29,6 +30,21 @@ export type SearchResponse = {
   isNLInterpreted: boolean
   parsedFilters?: SearchFilters
   error?: string
+}
+
+const SIMILARITY_THRESHOLD = 0.3
+const RESULT_LIMIT = 20
+
+type RawSearchRow = {
+  id: string
+  documentNumber: string | null
+  sender: string | null
+  subject: string | null
+  documentDate: Date | null
+  summary: string | null
+  extractedText: string | null
+  r2Key: string | null
+  similarity: unknown
 }
 
 function hasActiveFilters(filters: SearchFilters): boolean {
@@ -76,10 +92,107 @@ async function metadataSearch(
       r2Key: true,
     },
     orderBy: { documentDate: 'desc' },
-    take: 20,
+    take: RESULT_LIMIT,
   })
 
   return documents
+}
+
+// Semantic-only: no metadata filters, ranks purely by vector similarity.
+async function semanticSearch(
+  userId: string,
+  queryVector: number[],
+): Promise<SearchResult[]> {
+  const vectorStr = JSON.stringify(queryVector)
+
+  const rows = await prisma.$queryRaw<RawSearchRow[]>`
+    SELECT
+      d.id,
+      d."documentNumber",
+      d.sender,
+      d.subject,
+      d."documentDate",
+      d.summary,
+      d."extractedText",
+      d."r2Key",
+      MAX(1 - (dc.embedding <=> ${vectorStr}::vector)) AS similarity
+    FROM "Document" d
+    JOIN "DocumentChunk" dc ON dc."documentId" = d.id
+    WHERE d."userId" = ${userId}
+      AND dc.embedding IS NOT NULL
+      AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
+    GROUP BY
+      d.id, d."documentNumber", d.sender, d.subject,
+      d."documentDate", d.summary, d."extractedText", d."r2Key"
+    ORDER BY similarity DESC
+    LIMIT ${RESULT_LIMIT}
+  `
+
+  return rows.map((row) => ({
+    ...row,
+    similarity: typeof row.similarity === 'string' ? parseFloat(row.similarity) : Number(row.similarity),
+  }))
+}
+
+// Hybrid: apply metadata filters first, then rank survivors by vector similarity.
+// Added in task 4.2 — placeholder calls metadataSearch for now.
+async function hybridSearch(
+  userId: string,
+  queryVector: number[],
+  filters: SearchFilters,
+): Promise<SearchResult[]> {
+  const vectorStr = JSON.stringify(queryVector)
+
+  // Build optional filter clauses
+  const conditions: string[] = [
+    `d."userId" = '${userId}'`,
+    `dc.embedding IS NOT NULL`,
+    `1 - (dc.embedding <=> '${vectorStr}'::vector) >= ${SIMILARITY_THRESHOLD}`,
+  ]
+
+  if (filters.documentNumber) {
+    conditions.push(`d."documentNumber" ILIKE '%${filters.documentNumber.replace(/'/g, "''")}%'`)
+  }
+  if (filters.sender) {
+    conditions.push(`d.sender ILIKE '%${filters.sender.replace(/'/g, "''")}%'`)
+  }
+  if (filters.subject) {
+    conditions.push(`d.subject ILIKE '%${filters.subject.replace(/'/g, "''")}%'`)
+  }
+  if (filters.dateFrom) {
+    conditions.push(`d."documentDate" >= '${filters.dateFrom}'`)
+  }
+  if (filters.dateTo) {
+    conditions.push(`d."documentDate" <= '${filters.dateTo}'`)
+  }
+
+  const whereClause = conditions.join(' AND ')
+
+  const rows = await prisma.$queryRawUnsafe<RawSearchRow[]>(`
+    SELECT
+      d.id,
+      d."documentNumber",
+      d.sender,
+      d.subject,
+      d."documentDate",
+      d.summary,
+      d."extractedText",
+      d."r2Key",
+      MAX(1 - (dc.embedding <=> '${vectorStr}'::vector)) AS similarity
+    FROM "Document" d
+    JOIN "DocumentChunk" dc ON dc."documentId" = d.id
+    WHERE ${whereClause}
+    GROUP BY
+      d.id, d."documentNumber", d.sender, d.subject,
+      d."documentDate", d.summary, d."extractedText", d."r2Key"
+    ORDER BY similarity DESC
+    LIMIT ${RESULT_LIMIT}
+  `)
+
+  return rows.map((row) => ({
+    ...row,
+    similarity: typeof row.similarity === 'string' ? parseFloat(row.similarity) : Number(row.similarity),
+  }))
 }
 
 export async function searchDocuments(
@@ -99,14 +212,25 @@ export async function searchDocuments(
   }
 
   // Metadata-only path — no query text, only filters active.
-  // Semantic and hybrid paths added in tasks 3.1 and 4.2.
   if (!trimmedQuery) {
     const results = await metadataSearch(userId, filters)
     return { success: true, results, isNLInterpreted: false }
   }
 
-  // Query present — semantic/hybrid/NL paths handled in tasks 3.1–4.3.
-  // Temporary fallback: metadata-only with whatever filters are active.
-  const results = await metadataSearch(userId, filters)
+  // Query present — generate embedding and choose semantic or hybrid path.
+  // NL parsing step added in task 4.3.
+  const queryVector = await generateEmbedding(trimmedQuery)
+
+  if (!queryVector) {
+    // Embedding failed — fall back to metadata search with current filters.
+    const results = await metadataSearch(userId, filters)
+    return { success: true, results, isNLInterpreted: false }
+  }
+
+  const activeFilters = hasActiveFilters(filters)
+  const results = activeFilters
+    ? await hybridSearch(userId, queryVector, filters)
+    : await semanticSearch(userId, queryVector)
+
   return { success: true, results, isNLInterpreted: false }
 }
