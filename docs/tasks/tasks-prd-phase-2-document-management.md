@@ -74,11 +74,11 @@
     - Run `pnpm prisma generate` to regenerate the Prisma client.
     - Confirm the `documents` table exists in the database by running `pnpm prisma studio` or inspecting the migration file in `prisma/migrations/`.
 
-- [ ] 2.0 R2 Integration — Configure Cloudflare R2 SDK and server-side utilities
-  - [ ] 2.1 Install R2 SDK packages
+- [x] 2.0 R2 Integration — Configure Cloudflare R2 SDK and server-side utilities
+  - [x] 2.1 Install R2 SDK packages
     - Run `pnpm add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`.
     - Verify both packages appear in `package.json` under `dependencies`.
-  - [ ] 2.2 Add R2 environment variables
+  - [x] 2.2 Add R2 environment variables
     - Add the following to `.env.local` (with real values):
       ```
       R2_ACCOUNT_ID=
@@ -88,7 +88,7 @@
       R2_PUBLIC_URL=
       ```
     - Add the same keys (with empty values) to `.env.example` so other developers know what is required.
-  - [ ] 2.3 Create R2 client singleton at `src/lib/r2.ts`
+  - [x] 2.3 Create R2 client singleton at `src/lib/r2.ts`
     - Create `src/lib/r2.ts`.
     - Instantiate an `S3Client` using the R2-compatible endpoint:
       ```ts
@@ -96,12 +96,12 @@
       ```
     - Export the client as a singleton (same pattern as `src/lib/prisma.ts`).
     - Mark the file or the import with `'server-only'` to prevent accidental client-side use. Install `server-only` if not present: `pnpm add server-only`.
-  - [ ] 2.4 Add `uploadToR2` utility function in `src/lib/r2.ts`
+  - [x] 2.4 Add `uploadToR2` utility function in `src/lib/r2.ts`
     - Accepts: `key: string`, `body: Buffer | Uint8Array`, `contentType: string`.
     - Uses `PutObjectCommand` from `@aws-sdk/client-s3`.
     - Returns the `key` on success.
     - Throws an error on failure so the caller can handle it.
-  - [ ] 2.5 Add `getPresignedUrl` utility function in `src/lib/r2.ts`
+  - [x] 2.5 Add `getPresignedUrl` utility function in `src/lib/r2.ts`
     - Accepts: `key: string`, `expiresInSeconds?: number` (default 3600).
     - Uses `getSignedUrl` from `@aws-sdk/s3-request-presigner` with a `GetObjectCommand`.
     - Returns the signed URL string.
