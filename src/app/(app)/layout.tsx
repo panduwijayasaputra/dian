@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { LogoutButton } from '@/components/auth/logout-button'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,7 +23,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
           </div>
-          <LogoutButton />
+          <div className="flex items-center gap-2">
+            <InstallPrompt />
+            <LogoutButton />
+          </div>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
