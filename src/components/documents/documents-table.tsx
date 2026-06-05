@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { DocumentModel } from '@/generated/prisma/models/Document'
 import {
   Table,
@@ -9,7 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { StatusBadge } from './status-badge'
 import { DocumentTypeBadge } from './document-type-badge'
 import { EmptyDocuments } from './empty-documents'
@@ -78,14 +80,27 @@ export function DocumentsTable({ documents, onView }: DocumentsTableProps) {
                 <StatusBadge status={doc.status} />
               </TableCell>
               <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!doc.r2Key}
-                  onClick={() => onView?.(doc.id)}
-                >
-                  Lihat
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      !doc.r2Key ||
+                      doc.status === 'LOCAL' ||
+                      doc.status === 'EXTRACTING' ||
+                      doc.status === 'REVIEW'
+                    }
+                    onClick={() => onView?.(doc.id)}
+                  >
+                    Lihat
+                  </Button>
+                  <Link
+                    href={`/documents/${doc.id}/settings`}
+                    className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+                  >
+                    Edit
+                  </Link>
+                </div>
               </TableCell>
             </TableRow>
           ))}
