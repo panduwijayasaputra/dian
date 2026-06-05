@@ -19,6 +19,13 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.nextUrl))
   }
 
+  const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
+  const isUploadRoute = req.nextUrl.pathname.startsWith('/upload')
+
+  if (isLoggedIn && (isAdminRoute || isUploadRoute) && token.role !== 'ADMIN') {
+    return NextResponse.redirect(new URL('/documents', req.nextUrl))
+  }
+
   return NextResponse.next()
 }
 
