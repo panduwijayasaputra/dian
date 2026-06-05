@@ -107,13 +107,13 @@
     - Returns the signed URL string.
     - This function must only be called from Server Actions or API Routes.
 
-- [ ] 3.0 Document Upload — Build upload UI with drag-and-drop, file picker, validation, and queue
-  - [ ] 3.1 Create the upload page route at `src/app/(app)/upload/page.tsx`
+- [x] 3.0 Document Upload — Build upload UI with drag-and-drop, file picker, validation, and queue
+  - [x] 3.1 Create the upload page route at `src/app/(app)/upload/page.tsx`
     - Create the directory `src/app/(app)/upload/`.
     - Create `page.tsx` as a Server Component.
     - Add a page heading (e.g., "Upload Document") and render the `DropZone` component (to be created in 3.2).
     - The page is protected by the existing `(app)` layout middleware from Phase 1.
-  - [ ] 3.2 Create `DropZone` component at `src/components/upload/drop-zone.tsx`
+  - [x] 3.2 Create `DropZone` component at `src/components/upload/drop-zone.tsx`
     - This is a Client Component (`'use client'`).
     - Render a dashed-border drop zone area with an upload icon and the label "Drag a PDF here".
     - Below the drop zone, render a "Browse files" button that triggers a hidden `<input type="file" accept=".pdf" />`.
@@ -123,13 +123,13 @@
       - On drop: extract the file from `event.dataTransfer.files[0]` and pass it to the validation step (3.3).
     - Handle file picker `onChange`: extract `event.target.files[0]` and pass it to the validation step.
     - Only accept one file at a time from both paths.
-  - [ ] 3.3 Add client-side PDF validation inside `DropZone`
+  - [x] 3.3 Add client-side PDF validation inside `DropZone`
     - After a file is selected (from drop or picker), check:
       1. `file.type === 'application/pdf'` — if not, show an inline error: "Only PDF files are accepted."
       2. `file.size <= 20 * 1024 * 1024` (20 MB) — if not, show: "File exceeds the 20 MB limit."
     - If both checks pass, add the file to the upload queue state (3.5).
     - Show the error message below the drop zone. Clear the error when a new file is selected.
-  - [ ] 3.4 Create Server Action at `src/app/(app)/upload/actions.ts`
+  - [x] 3.4 Create Server Action at `src/app/(app)/upload/actions.ts`
     - Create `uploadDocument(formData: FormData)` as a `'use server'` action.
     - Steps inside the action:
       1. Extract the file from `formData.get('file')`.
@@ -143,14 +143,14 @@
          - `originalName` set to the original filename
          - `fileSizeBytes` set to the file size
       6. Return `{ success: true, documentId }` or `{ success: false, error: string }`.
-  - [ ] 3.5 Add upload queue state inside `DropZone`
+  - [x] 3.5 Add upload queue state inside `DropZone`
     - Maintain a `queue: File[]` state array in the `DropZone` component.
     - When a valid file is selected, append it to `queue`.
     - Process the queue one file at a time:
       - Take the first file in `queue`, call the Server Action, then shift it off the queue.
       - Show a "Next up" section below the drop zone listing queued files, each with a remove (×) button.
     - Only start uploading the next file after the current one completes (success or error).
-  - [ ] 3.6 Show upload progress indicator
+  - [x] 3.6 Show upload progress indicator
     - While a file is uploading, show a spinner or progress bar inside the drop zone area.
     - Disable the file picker and drop zone while an upload is in progress (prevent adding a duplicate).
     - On success: briefly show a "Uploaded successfully" message, then either redirect to `/documents` or begin the next queued upload.
