@@ -29,6 +29,13 @@ enum DocumentType {
   OTHER
 }
 
+enum EmbeddingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -54,6 +61,19 @@ model Document {
   originalName     String?
   extractedText    String?
   extractionResult Json?
-  createdAt        DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  summary          String?
+  embeddingStatus  EmbeddingStatus @default(PENDING)
+  chunks           DocumentChunk[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model DocumentChunk {
+  id         String                    @id @default(cuid())
+  documentId String
+  document   Document                  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    String
+  chunkIndex Int
+  embedding  Unsupported("vector(1536)")?
+  createdAt  DateTime                  @default(now())
 }
