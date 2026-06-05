@@ -238,7 +238,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       4. If the local doc has no `file_blob`, set `setError('Dokumen tidak tersedia secara offline.')` and skip the network call.
       5. If the local doc is not found at all in IndexedDB, also set the error.
 
-- [ ] 5.0 Sync Engine & Sync UI
+- [x] 5.0 Sync Engine & Sync UI
   - [x] 5.1 Create `src/lib/sync.ts` — upload pending
     - Create the file and export `async function uploadPending(): Promise<{ uploaded: number; failed: number }>`.
     - Implementation:
