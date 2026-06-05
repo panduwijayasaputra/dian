@@ -6,9 +6,12 @@
 - `.prettierrc` — Prettier formatting config.
 - `eslint.config.mjs` — ESLint config extended with prettier.
 - `README.md` — Local setup instructions.
+- `prisma.config.ts` — Prisma 7 config: datasource URL, migration path (replaces `env()` in schema).
 - `prisma/schema.prisma` — Database schema: User model, pgvector extension.
 - `prisma/seed.ts` — Seed script that creates the default admin user.
 - `prisma/migrations/` — Auto-generated migration SQL files.
+- `src/generated/prisma/` — Auto-generated Prisma client (gitignored, do not edit).
+- `src/lib/prisma.ts` — Prisma client singleton. Import: `from '@/generated/prisma'` (Prisma 7).
 - `auth.ts` — Auth.js v5 configuration: Credentials provider, bcrypt verify, JWT session.
 - `middleware.ts` — Route protection: redirects unauthenticated users to `/login`.
 - `src/app/api/auth/[...nextauth]/route.ts` — Auth.js HTTP handler.
@@ -27,7 +30,7 @@
 
 ## Tasks
 
-- [ ] 1.0 Initialize Next.js project with full toolchain (WO-001)
+- [x] 1.0 Initialize Next.js project with full toolchain (WO-001)
   - [x] 1.1 Scaffold the Next.js 15 app
     - Run: `pnpm create next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`
     - Verify the app starts with `pnpm dev` and the default page loads at `http://localhost:3000`.
@@ -72,13 +75,13 @@
     - Add `.env` to `.gitignore` if not already there.
 
 - [ ] 2.0 Configure Prisma with PostgreSQL and pgvector (WO-002)
-  - [ ] 2.1 Install Prisma and initialise
+  - [x] 2.1 Install Prisma and initialise
     - Run: `pnpm add -D prisma` and `pnpm add @prisma/client`
     - Run: `pnpm prisma init`
     - This creates `prisma/schema.prisma` and `.env` (with a `DATABASE_URL` placeholder).
     - Update `.env` with your local PostgreSQL connection string: `postgresql://USER:PASSWORD@localhost:5432/dian_db`
     - Create the `dian_db` database in PostgreSQL if it doesn't exist: `createdb dian_db`
-  - [ ] 2.2 Enable pgvector extension in Prisma schema
+  - [x] 2.2 Enable pgvector extension in Prisma schema
     - Open `prisma/schema.prisma`.
     - In the `generator client` block, add: `previewFeatures = ["postgresqlExtensions"]`
     - In the `datasource db` block, add: `extensions = [pgvector(map: "vector")]`
@@ -99,7 +102,7 @@
 
     - Run `pnpm prisma generate` — it should complete without errors.
 
-  - [ ] 2.3 Add database scripts to package.json
+  - [x] 2.3 Add database scripts to package.json
     - Add the following to the `scripts` section of `package.json`:
       - `"db:migrate": "prisma migrate deploy && prisma db seed"`
       - `"db:migrate:dev": "prisma migrate dev"`
