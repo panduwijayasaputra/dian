@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import type { DocumentStatus } from '@/generated/prisma/enums'
+import type { DocumentStatus, EmbeddingStatus } from '@/generated/prisma/enums'
 
 const STATUS_CONFIG: Record<DocumentStatus, { label: string; className: string }> = {
   LOCAL: {
@@ -34,6 +34,34 @@ const STATUS_CONFIG: Record<DocumentStatus, { label: string; className: string }
 
 export function StatusBadge({ status }: { status: DocumentStatus }) {
   const { label, className } = STATUS_CONFIG[status]
+  return (
+    <Badge variant="outline" className={className}>
+      {label}
+    </Badge>
+  )
+}
+
+const EMBEDDING_STATUS_CONFIG: Record<EmbeddingStatus, { label: string; className: string }> = {
+  PENDING: {
+    label: 'Menunggu',
+    className: 'bg-gray-100 text-gray-700 hover:bg-gray-100',
+  },
+  PROCESSING: {
+    label: 'Memproses',
+    className: 'bg-purple-100 text-purple-700 hover:bg-purple-100',
+  },
+  COMPLETED: {
+    label: 'Terindeks',
+    className: 'bg-green-100 text-green-700 hover:bg-green-100',
+  },
+  FAILED: {
+    label: 'Gagal',
+    className: 'bg-red-100 text-red-700 hover:bg-red-100',
+  },
+}
+
+export function EmbeddingStatusBadge({ status }: { status: EmbeddingStatus }) {
+  const { label, className } = EMBEDDING_STATUS_CONFIG[status]
   return (
     <Badge variant="outline" className={className}>
       {label}

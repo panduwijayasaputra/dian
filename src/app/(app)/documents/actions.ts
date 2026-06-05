@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { chunkText } from '@/lib/chunk-text'
 import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
+import { generateEmbedding } from '@/lib/generate-embeddings'
 import { generateSummary } from '@/lib/generate-summary'
 import { extractTextFromR2 } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
@@ -82,6 +83,44 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
     } catch (err) {
       console.error('[chunk] Failed to store chunks:', err)
     }
+  }
+
+  try {
+    const storedChunks = await prisma.documentChunk.findMany({
+      where: { documentId },
+      orderBy: { chunkIndex: 'asc' },
+    })
+
+    if (storedChunks.length > 0) {
+      await prisma.document.update({
+        where: { id: documentId },
+        data: { embeddingStatus: 'PROCESSING' },
+      })
+
+      let successCount = 0
+      for (const chunk of storedChunks) {
+        const vector = await generateEmbedding(chunk.content)
+        if (vector) {
+          await prisma.$executeRaw`
+            UPDATE "DocumentChunk"
+            SET embedding = ${JSON.stringify(vector)}::vector
+            WHERE id = ${chunk.id}
+          `
+          successCount++
+        }
+      }
+
+      await prisma.document.update({
+        where: { id: documentId },
+        data: { embeddingStatus: successCount > 0 ? 'COMPLETED' : 'FAILED' },
+      })
+    }
+  } catch (err) {
+    console.error('[embedding] Pipeline error:', err)
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { embeddingStatus: 'FAILED' },
+    })
   }
 
   const updated = await prisma.document.findUniqueOrThrow({ where: { id: documentId } })

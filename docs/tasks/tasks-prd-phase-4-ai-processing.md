@@ -109,7 +109,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
     - Include `summary` in the `prisma.document.update(...)` data payload alongside `extractedText` and `extractionResult`
     - This call is already inside the action — if it throws (which it won't, due to the try/catch in the lib), the action will still continue due to the outer structure
 
-- [ ] 4.0 Implement document chunking (WO-013)
+- [x] 4.0 Implement document chunking (WO-013)
   - [x] 4.1 Create `src/lib/chunk-text.ts`
     - Create a new file (no `server-only` needed — this is a pure utility)
     - Export a function `chunkText(text: string): string[]`
@@ -143,14 +143,14 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
       ```
     - Wrap in try/catch — if `createMany` fails, log the error and continue (do not throw)
 
-- [ ] 5.0 Generate and store vector embeddings with pgvector (WO-014–015)
-  - [ ] 5.1 Create `src/lib/generate-embeddings.ts`
+- [x] 5.0 Generate and store vector embeddings with pgvector (WO-014–015)
+  - [x] 5.1 Create `src/lib/generate-embeddings.ts`
     - Create a new file with `import 'server-only'` at the top
     - Export an async function `generateEmbedding(text: string): Promise<number[] | null>`
     - Call OpenAI `text-embedding-3-small` with the given text as input
     - Return the embedding array from `response.data[0].embedding`, or `null` on any error
     - Wrap in try/catch — on any error, log and return `null`
-  - [ ] 5.2 Call `generateEmbedding` for each chunk inside `extractDocumentMetadata`
+  - [x] 5.2 Call `generateEmbedding` for each chunk inside `extractDocumentMetadata`
     - After the chunking step, set `embeddingStatus` to `PROCESSING`:
       ```ts
       await prisma.document.update({
@@ -177,7 +177,7 @@ Based on [prd-phase-4-ai-processing.md](../prd/prd-phase-4-ai-processing.md)
       - If all embeddings are null: set `embeddingStatus: 'FAILED'`
       - Otherwise: set `embeddingStatus: 'COMPLETED'`
     - Wrap the entire embedding loop in try/catch — on unexpected error, set `embeddingStatus: 'FAILED'` and continue
-  - [ ] 5.3 Add `embeddingStatus` badge to the documents table
+  - [x] 5.3 Add `embeddingStatus` badge to the documents table
     - In `src/components/documents/status-badge.tsx`, add a new exported component `EmbeddingStatusBadge` that renders the `embeddingStatus` value using the same shadcn `Badge` pattern as `ExtractionStatusBadge`
     - Map statuses to badge variants:
       - `PENDING` → secondary

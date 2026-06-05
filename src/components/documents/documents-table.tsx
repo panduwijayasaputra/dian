@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { StatusBadge } from './status-badge'
+import { EmbeddingStatusBadge, StatusBadge } from './status-badge'
 import { DocumentTypeBadge } from './document-type-badge'
 import { EmptyDocuments } from './empty-documents'
 
@@ -47,6 +47,7 @@ export function DocumentsTable({ documents, onView }: DocumentsTableProps) {
             <TableHead>Pengirim</TableHead>
             <TableHead>Tanggal</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Embedding</TableHead>
             <TableHead className="w-20" />
           </TableRow>
         </TableHeader>
@@ -78,6 +79,9 @@ export function DocumentsTable({ documents, onView }: DocumentsTableProps) {
               </TableCell>
               <TableCell>
                 <StatusBadge status={doc.status} />
+              </TableCell>
+              <TableCell>
+                <EmbeddingStatusBadge status={doc.embeddingStatus} />
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
