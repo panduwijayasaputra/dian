@@ -10,7 +10,11 @@ const MAX_SIZE_BYTES = 20 * 1024 * 1024
 
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
-export function DropZone() {
+interface DropZoneProps {
+  onUploadComplete?: (documentId: string) => void
+}
+
+export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
   const router = useRouter()
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -39,12 +43,19 @@ export function DropZone() {
         setUploadStatus('success')
         setQueue((prev) => prev.slice(1))
         setIsUploading(false)
-        // If no more files queued, redirect to documents after brief delay
-        setTimeout(() => {
-          setUploadStatus('idle')
-          setCurrentFileName(null)
-          router.push('/documents')
-        }, 1500)
+        if (onUploadComplete) {
+          setTimeout(() => {
+            setUploadStatus('idle')
+            setCurrentFileName(null)
+            onUploadComplete(result.documentId)
+          }, 800)
+        } else {
+          setTimeout(() => {
+            setUploadStatus('idle')
+            setCurrentFileName(null)
+            router.push('/documents')
+          }, 1500)
+        }
       } else {
         setUploadStatus('error')
         setError(result.error)

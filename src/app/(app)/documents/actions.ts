@@ -4,7 +4,9 @@ import { auth } from '@/auth'
 import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
 import { extractTextFromR2 } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
-import { getPresignedUrl } from '@/lib/r2'
+import { DeleteObjectCommand } from '@aws-sdk/client-s3'
+import type { MetadataFormValues } from '@/components/documents/metadata-form'
+import { getPresignedUrl, r2Client } from '@/lib/r2'
 
 type ViewUrlResult =
   | { success: true; url: string }
@@ -68,4 +70,85 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
   })
 
   return { success: true, result }
+}
+
+type SimpleResult = { success: true } | { success: false; error: string }
+
+export async function saveDocumentMetadata(
+  documentId: string,
+  values: MetadataFormValues,
+): Promise<SimpleResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
+
+  const document = await prisma.document.findUnique({ where: { id: documentId } })
+  if (!document || document.userId !== session.user.id) {
+    return { success: false, error: 'Document not found.' }
+  }
+
+  const documentDate = values.documentDate ? new Date(values.documentDate) : null
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      documentNumber: values.documentNumber || null,
+      documentDate,
+      sender: values.sender || null,
+      subject: values.subject || null,
+      documentType: (values.documentType as never) || null,
+      status: 'READY',
+    },
+  })
+
+  return { success: true }
+}
+
+export async function deleteDocument(documentId: string): Promise<SimpleResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
+
+  const document = await prisma.document.findUnique({ where: { id: documentId } })
+  if (!document || document.userId !== session.user.id) {
+    return { success: false, error: 'Document not found.' }
+  }
+
+  if (document.r2Key) {
+    await r2Client.send(
+      new DeleteObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME!,
+        Key: document.r2Key,
+      }),
+    )
+  }
+
+  await prisma.document.delete({ where: { id: documentId } })
+  return { success: true }
+}
+
+export async function updateDocumentMetadata(
+  documentId: string,
+  values: MetadataFormValues,
+): Promise<SimpleResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
+
+  const document = await prisma.document.findUnique({ where: { id: documentId } })
+  if (!document || document.userId !== session.user.id) {
+    return { success: false, error: 'Document not found.' }
+  }
+
+  const documentDate = values.documentDate ? new Date(values.documentDate) : null
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      documentNumber: values.documentNumber || null,
+      documentDate,
+      sender: values.sender || null,
+      subject: values.subject || null,
+      documentType: (values.documentType as never) || null,
+    },
+  })
+
+  return { success: true }
 }
