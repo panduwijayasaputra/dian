@@ -35,7 +35,7 @@ export async function getDocumentViewUrl(documentId: string): Promise<ViewUrlRes
 }
 
 type ExtractResult =
-  | { success: true; result: ExtractionResult }
+  | { success: true; result: ExtractionResult; document: Awaited<ReturnType<typeof prisma.document.findUniqueOrThrow>> }
   | { success: false; error: string }
 
 export async function extractDocumentMetadata(documentId: string): Promise<ExtractResult> {
@@ -69,15 +69,20 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
     },
   })
 
-  return { success: true, result }
+  const updated = await prisma.document.findUniqueOrThrow({ where: { id: documentId } })
+  return { success: true, result, document: updated }
 }
 
 type SimpleResult = { success: true } | { success: false; error: string }
 
+type SaveResult =
+  | { success: true; document: Awaited<ReturnType<typeof prisma.document.findUniqueOrThrow>> }
+  | { success: false; error: string }
+
 export async function saveDocumentMetadata(
   documentId: string,
   values: MetadataFormValues,
-): Promise<SimpleResult> {
+): Promise<SaveResult> {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
 
@@ -88,7 +93,7 @@ export async function saveDocumentMetadata(
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
 
-  await prisma.document.update({
+  const updated = await prisma.document.update({
     where: { id: documentId },
     data: {
       documentNumber: values.documentNumber || null,
@@ -100,7 +105,7 @@ export async function saveDocumentMetadata(
     },
   })
 
-  return { success: true }
+  return { success: true, document: updated }
 }
 
 export async function deleteDocument(documentId: string): Promise<SimpleResult> {
