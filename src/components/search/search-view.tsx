@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { searchDocuments } from '@/app/(app)/search/actions'
 import type { SearchFilters, SearchResult } from '@/app/(app)/search/actions'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import { FilterPanel } from '@/components/search/filter-panel'
 import { SearchBar } from '@/components/search/search-bar'
 
@@ -96,10 +97,12 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
         disabled={!isOnline}
       />
 
-      {isNLInterpreted && (
-        <p className="text-xs text-muted-foreground">
-          AI menafsirkan pencarian Anda
-        </p>
+      {isNLInterpreted && !!query.trim() && (
+        <div>
+          <Badge variant="secondary" className="text-xs font-normal">
+            AI menafsirkan pencarian Anda
+          </Badge>
+        </div>
       )}
 
       <FilterPanel filters={filters} onChange={setFilters} />

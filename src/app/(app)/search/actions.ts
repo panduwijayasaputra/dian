@@ -2,6 +2,7 @@
 
 import { auth } from '@/auth'
 import { generateEmbedding } from '@/lib/generate-embeddings'
+import { parseNlQuery } from '@/lib/parse-nl-query'
 import { prisma } from '@/lib/prisma'
 
 export type SearchFilters = {
@@ -217,20 +218,58 @@ export async function searchDocuments(
     return { success: true, results, isNLInterpreted: false }
   }
 
-  // Query present — generate embedding and choose semantic or hybrid path.
-  // NL parsing step added in task 4.3.
-  const queryVector = await generateEmbedding(trimmedQuery)
+  // Run NL parsing and embedding generation in parallel for performance.
+  const [parsed, queryVector] = await Promise.all([
+    parseNlQuery(trimmedQuery),
+    generateEmbedding(trimmedQuery),
+  ])
 
-  if (!queryVector) {
-    // Embedding failed — fall back to metadata search with current filters.
-    const results = await metadataSearch(userId, filters)
-    return { success: true, results, isNLInterpreted: false }
+  // Merge NL-extracted fields into filters — user-set values always take priority.
+  let isNLInterpreted = false
+  let mergedFilters = { ...filters }
+  let parsedFilters: SearchFilters | undefined
+
+  if (parsed) {
+    const next: SearchFilters = {}
+    let didMerge = false
+
+    if (parsed.document_number && !filters.documentNumber) {
+      next.documentNumber = parsed.document_number
+      didMerge = true
+    }
+    if (parsed.sender && !filters.sender) {
+      next.sender = parsed.sender
+      didMerge = true
+    }
+    if (parsed.subject_keywords && !filters.subject) {
+      next.subject = parsed.subject_keywords
+      didMerge = true
+    }
+    if (parsed.date_from && !filters.dateFrom) {
+      next.dateFrom = parsed.date_from
+      didMerge = true
+    }
+    if (parsed.date_to && !filters.dateTo) {
+      next.dateTo = parsed.date_to
+      didMerge = true
+    }
+
+    if (didMerge) {
+      mergedFilters = { ...filters, ...next }
+      parsedFilters = next
+      isNLInterpreted = true
+    }
   }
 
-  const activeFilters = hasActiveFilters(filters)
-  const results = activeFilters
-    ? await hybridSearch(userId, queryVector, filters)
+  // Embedding failed — fall back to metadata search with merged filters.
+  if (!queryVector) {
+    const results = await metadataSearch(userId, mergedFilters)
+    return { success: true, results, isNLInterpreted, parsedFilters }
+  }
+
+  const results = hasActiveFilters(mergedFilters)
+    ? await hybridSearch(userId, queryVector, mergedFilters)
     : await semanticSearch(userId, queryVector)
 
-  return { success: true, results, isNLInterpreted: false }
+  return { success: true, results, isNLInterpreted, parsedFilters }
 }

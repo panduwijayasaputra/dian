@@ -165,8 +165,8 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
     - The `>= 0.3` threshold filters out low-relevance results.
     - Confirm the query works by manually testing with a known document in the dev database (run the dev server: `pnpm dev`).
 
-- [ ] 4.0 Hybrid search + NL parsing orchestration (WO-018 + WO-019)
-  - [ ] 4.1 Create `src/lib/parse-nl-query.ts`
+- [x] 4.0 Hybrid search + NL parsing orchestration (WO-018 + WO-019)
+  - [x] 4.1 Create `src/lib/parse-nl-query.ts`
     - Add `import 'server-only'` at the top.
     - Import and instantiate the OpenAI client (same pattern as `generate-summary.ts`).
     - Define and export a type:
@@ -196,7 +196,7 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
     - Pass the user's `query` as the user message.
     - Parse the JSON response. If parsing fails or any field is missing, fill missing fields with `null`.
     - Wrap the entire call in try/catch — on any error, return `null`.
-  - [ ] 4.2 Add hybrid search path to `searchDocuments`
+  - [x] 4.2 Add hybrid search path to `searchDocuments`
     - When `query` is non-empty **and** at least one filter is active, run the **hybrid path**:
       - Generate the query embedding: `const queryVector = await generateEmbedding(query)`.
       - Build metadata WHERE conditions as SQL fragments. Use parameterized values (never string interpolation).
@@ -208,7 +208,7 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
         - `AND d."documentDate" <= ${new Date(filters.dateTo)}`
       - Sort by `similarity DESC`, limit 20.
       - If `queryVector` is null, fall back to metadata-only path (the Prisma `findMany` from Task 2.1).
-  - [ ] 4.3 Add NL parsing step to `searchDocuments` as the first step when a query is present
+  - [x] 4.3 Add NL parsing step to `searchDocuments` as the first step when a query is present
     - At the top of `searchDocuments`, when `query` is non-empty:
       - Call `const parsed = await parseNlQuery(query)`.
       - If `parsed` is not null and has at least one non-null field:
@@ -221,7 +221,7 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
         - Set `isNLInterpreted = true`.
       - If `parsed` is null or all fields are null, set `isNLInterpreted = false` and proceed with the query as-is.
     - Return the final `isNLInterpreted` value in `SearchResponse`.
-  - [ ] 4.4 Update `SearchView` to handle NL-interpreted results
+  - [x] 4.4 Update `SearchView` to handle NL-interpreted results
     - After `searchDocuments` returns, if `isNLInterpreted` is true:
       - Update `filters` state with the NL-extracted values (the server action returns these in the response — add a `parsedFilters?: SearchFilters` field to `SearchResponse` to carry them back).
       - This makes the filter chips visible so the user can inspect and edit the auto-populated filters.
