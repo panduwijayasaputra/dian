@@ -189,8 +189,8 @@
     - Open `src/app/(app)/layout.tsx`.
     - Add navigation links for "Documents" (`/documents`) and "Upload" (`/upload`) to the existing app shell/sidebar/nav bar.
 
-- [ ] 5.0 Document Viewer Modal — Build View button, PDF modal, and presigned URL fetching
-  - [ ] 5.1 Create Server Action at `src/app/(app)/documents/actions.ts`
+- [x] 5.0 Document Viewer Modal — Build View button, PDF modal, and presigned URL fetching
+  - [x] 5.1 Create Server Action at `src/app/(app)/documents/actions.ts`
     - Create `getDocumentViewUrl(documentId: string)` as a `'use server'` action.
     - Steps:
       1. Fetch the `Document` record from the database by `id`.
@@ -198,7 +198,7 @@
       3. If `r2Key` is null or status is `LOCAL`, return `{ success: false, error: 'Document not available' }`.
       4. Call `getPresignedUrl(document.r2Key)` from `src/lib/r2.ts`.
       5. Return `{ success: true, url }`.
-  - [ ] 5.2 Create `DocumentViewerModal` component at `src/components/documents/document-viewer-modal.tsx`
+  - [x] 5.2 Create `DocumentViewerModal` component at `src/components/documents/document-viewer-modal.tsx`
     - This is a Client Component (`'use client'`).
     - Accept props: `documentId: string`, `isOpen: boolean`, `onClose: () => void`.
     - When `isOpen` is true and `documentId` is set:
@@ -209,12 +209,12 @@
     - Use a shadcn/ui `Dialog` component for the modal shell. Add it with `pnpm dlx shadcn@latest add dialog`.
     - The modal should be large enough to comfortably read a PDF (e.g., `max-w-5xl`, full viewport height with scroll).
     - Include a visible close button (shadcn/ui `DialogClose`) in the top-right corner.
-  - [ ] 5.3 Wire the View button in `DocumentsTable` to open the modal
+  - [x] 5.3 Wire the View button in `DocumentsTable` to open the modal
     - Convert `DocumentsTable` to a Client Component or extract the View button as a small Client Component.
     - Maintain state: `selectedDocumentId: string | null` and `isModalOpen: boolean`.
     - Clicking "View" sets `selectedDocumentId` to the row's document ID and sets `isModalOpen = true`.
     - Render `<DocumentViewerModal>` once at the bottom of the table component, passing `selectedDocumentId` and `isModalOpen`.
     - Closing the modal sets `isModalOpen = false` and clears `selectedDocumentId`.
-  - [ ] 5.4 Disable View button for documents without an R2 file
+  - [x] 5.4 Disable View button for documents without an R2 file
     - In the table row, disable the "View" button when `document.status === 'LOCAL'` or `document.r2Key === null`.
     - Apply a visually distinct disabled style (e.g., `opacity-50 cursor-not-allowed`) so users understand the document is not yet viewable.
