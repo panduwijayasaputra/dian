@@ -17,6 +17,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link href="/upload" className="hover:text-foreground transition-colors">
                 Unggah
               </Link>
+              <Link href="/search" className="hover:text-foreground transition-colors">
+                Cari
+              </Link>
             </div>
           </div>
           <LogoutButton />
