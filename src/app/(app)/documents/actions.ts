@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth'
+import type { LocalDocument } from '@/lib/idb'
 import { chunkText } from '@/lib/chunk-text'
 import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
 import { generateEmbedding } from '@/lib/generate-embeddings'
@@ -210,4 +211,58 @@ export async function updateDocumentMetadata(
   })
 
   return { success: true }
+}
+
+type SyncResult =
+  | { success: true; documents: LocalDocument[] }
+  | { success: false }
+
+function mapStatus(status: string): LocalDocument['status'] {
+  switch (status) {
+    case 'READY': return 'ready'
+    case 'ERROR': return 'failed'
+    case 'LOCAL': return 'pending_sync'
+    default: return 'processing'
+  }
+}
+
+export async function getDocumentsForSync(): Promise<SyncResult> {
+  const session = await auth()
+  if (!session?.user?.id) return { success: false }
+
+  const docs = await prisma.document.findMany({
+    where: { userId: session.user.id },
+    select: {
+      id: true,
+      documentNumber: true,
+      documentDate: true,
+      sender: true,
+      subject: true,
+      summary: true,
+      extractedText: true,
+      r2Key: true,
+      status: true,
+      createdAt: true,
+    },
+  })
+
+  const now = new Date().toISOString()
+
+  const documents: LocalDocument[] = docs.map((doc) => ({
+    id: doc.id,
+    document_number: doc.documentNumber,
+    document_date: doc.documentDate ? doc.documentDate.toISOString().split('T')[0] : null,
+    sender: doc.sender,
+    subject: doc.subject,
+    summary: doc.summary,
+    extracted_text: doc.extractedText,
+    status: mapStatus(doc.status),
+    r2_key: doc.r2Key,
+    file_blob: null,
+    original_name: null,
+    created_at: doc.createdAt.toISOString(),
+    synced_at: now,
+  }))
+
+  return { success: true, documents }
 }

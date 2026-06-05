@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { getDocumentViewUrl } from '@/app/(app)/documents/actions'
+import { getDocument } from '@/lib/idb'
 
 interface DocumentViewerModalProps {
   documentId: string | null
@@ -20,6 +21,7 @@ export function DocumentViewerModal({ documentId, isOpen, onClose }: DocumentVie
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const objectUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!isOpen || !documentId) {
@@ -32,6 +34,26 @@ export function DocumentViewerModal({ documentId, isOpen, onClose }: DocumentVie
     setUrl(null)
     setError(null)
 
+    // Revoke any previously created object URL to avoid memory leaks
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+
+    if (!navigator.onLine) {
+      getDocument(documentId).then((local) => {
+        if (local?.file_blob) {
+          const objUrl = URL.createObjectURL(local.file_blob)
+          objectUrlRef.current = objUrl
+          setUrl(objUrl)
+        } else {
+          setError('Dokumen tidak tersedia secara offline.')
+        }
+        setIsLoading(false)
+      })
+      return
+    }
+
     getDocumentViewUrl(documentId).then((result) => {
       if (result.success) {
         setUrl(result.url)
@@ -40,6 +62,13 @@ export function DocumentViewerModal({ documentId, isOpen, onClose }: DocumentVie
       }
       setIsLoading(false)
     })
+
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = null
+      }
+    }
   }, [isOpen, documentId])
 
   return (

@@ -110,7 +110,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Place the `<Script>` tag inside the `<body>` element, after `{children}`.
     - This registers the service worker on every page load; the browser deduplicates re-registration automatically.
 
-- [ ] 3.0 IndexedDB Storage Layer
+- [x] 3.0 IndexedDB Storage Layer
   - [x] 3.1 Install the `idb` package
     - Run `pnpm add idb`.
     - Verify it appears in `package.json` under `dependencies`.
@@ -165,7 +165,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Import `SearchFilters` type from `@/app/(app)/search/actions` to keep types consistent.
 
 - [ ] 4.0 Offline Upload & Offline Search Integration
-  - [ ] 4.1 Add offline upload path to `drop-zone.tsx`
+  - [x] 4.1 Add offline upload path to `drop-zone.tsx`
     - Open `src/components/upload/drop-zone.tsx`.
     - In the `useEffect` that processes the upload queue, before calling `uploadDocument(formData)`, check `navigator.onLine`.
     - **If offline:**
@@ -195,7 +195,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - **If online:** proceed with the existing `uploadDocument(formData)` call as before (no change to the online path).
     - Add an informational note in the success screen: when offline, the `DropZone` success message should read "Disimpan secara lokal. Akan diunggah saat Anda kembali online." — you can do this by adding an `isOfflineQueue` state flag that switches the success text.
 
-  - [ ] 4.2 Add `getDocumentsForSync` server action
+  - [x] 4.2 Add `getDocumentsForSync` server action
     - Open `src/app/(app)/documents/actions.ts`.
     - Add and export a new server action `getDocumentsForSync()`.
     - It must:
@@ -205,7 +205,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       4. Return `{ success: true, documents: LocalDocument[] }`.
     - Import `LocalDocument` from `@/lib/idb`.
 
-  - [ ] 4.3 Wire offline search in `search-view.tsx`
+  - [x] 4.3 Wire offline search in `search-view.tsx`
     - Open `src/components/search/search-view.tsx`.
     - Import `queryDocuments` from `@/lib/idb`.
     - In `runSearch`, add a branch at the top of the `try` block:
@@ -229,7 +229,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Update the offline `Alert` text (line 90) from `"Search requires an internet connection."` to `"Offline Mode — Searching local documents only."` (FR-015).
     - Remove the `disabled={!isOnline}` prop from `<SearchBar>` — the search bar should remain active offline so users can type and submit (FR-014). The `isLoading` prop still controls the spinner.
 
-  - [ ] 4.4 Add offline fallback to the document viewer
+  - [x] 4.4 Add offline fallback to the document viewer
     - Open `src/components/documents/document-viewer-modal.tsx`.
     - In the `useEffect` that fetches the document URL, add an `isOnline` check at the start:
       1. Add `const [isOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true)` — or use the same `online`/`offline` event listener pattern as `SearchView`.

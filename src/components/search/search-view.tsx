@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { searchDocuments } from '@/app/(app)/search/actions'
 import type { SearchFilters, SearchResult } from '@/app/(app)/search/actions'
+import { queryDocuments } from '@/lib/idb'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { DocumentViewerModal } from '@/components/documents/document-viewer-modal'
@@ -47,6 +48,25 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
   const runSearch = useCallback(async (searchQuery: string, searchFilters: SearchFilters) => {
     setIsLoading(true)
     try {
+      if (!navigator.onLine) {
+        const localResults = await queryDocuments(searchQuery, searchFilters)
+        setResults(
+          localResults.map((doc) => ({
+            id: doc.id,
+            documentNumber: doc.document_number,
+            sender: doc.sender,
+            subject: doc.subject,
+            documentDate: doc.document_date ? new Date(doc.document_date) : null,
+            summary: doc.summary,
+            extractedText: doc.extracted_text,
+            r2Key: doc.r2_key,
+          })),
+        )
+        setIsNLInterpreted(false)
+        setHasSearched(true)
+        return
+      }
+
       const response = await searchDocuments(searchQuery, searchFilters)
       if (response.success) {
         setResults(response.results)
@@ -87,7 +107,7 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
       {!isOnline && (
         <Alert>
           <AlertDescription>
-            Search requires an internet connection.
+            Offline Mode — Searching local documents only.
           </AlertDescription>
         </Alert>
       )}
@@ -97,7 +117,6 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
         onChange={setQuery}
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        disabled={!isOnline}
       />
 
       {isNLInterpreted && !!query.trim() && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle, Loader2, UploadCloud, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { uploadDocument } from '@/app/(app)/upload/actions'
+import { upsertDocument } from '@/lib/idb'
 
 const MAX_SIZE_BYTES = 20 * 1024 * 1024
 
@@ -23,6 +24,7 @@ export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle')
   const [currentFileName, setCurrentFileName] = useState<string | null>(null)
   const [failedFile, setFailedFile] = useState<File | null>(null)
+  const [isOfflineQueue, setIsOfflineQueue] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -34,6 +36,41 @@ export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
     setCurrentFileName(file.name)
     setError(null)
     setFailedFile(null)
+
+    if (!navigator.onLine) {
+      const localId = crypto.randomUUID()
+      upsertDocument({
+        id: localId,
+        document_number: null,
+        document_date: null,
+        sender: null,
+        subject: null,
+        summary: null,
+        extracted_text: null,
+        status: 'pending_sync',
+        r2_key: null,
+        file_blob: file,
+        original_name: file.name,
+        created_at: new Date().toISOString(),
+        synced_at: null,
+      }).then(() => {
+        setIsOfflineQueue(true)
+        setUploadStatus('success')
+        setQueue((prev) => prev.slice(1))
+        setIsUploading(false)
+        setTimeout(() => {
+          setUploadStatus('idle')
+          setCurrentFileName(null)
+          setIsOfflineQueue(false)
+          if (onUploadComplete) {
+            onUploadComplete(localId)
+          } else {
+            router.push('/documents')
+          }
+        }, 1800)
+      })
+      return
+    }
 
     const formData = new FormData()
     formData.append('file', file)
@@ -142,7 +179,13 @@ export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
         {uploadStatus === 'success' && (
           <>
             <CheckCircle className="h-10 w-10 text-green-500" />
-            <p className="text-sm font-medium text-green-600">Uploaded successfully</p>
+            {isOfflineQueue ? (
+              <p className="text-sm font-medium text-green-600">
+                Disimpan secara lokal. Akan diunggah saat Anda kembali online.
+              </p>
+            ) : (
+              <p className="text-sm font-medium text-green-600">Uploaded successfully</p>
+            )}
           </>
         )}
 
