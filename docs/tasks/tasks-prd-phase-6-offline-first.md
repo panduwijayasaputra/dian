@@ -81,7 +81,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Import `InstallPrompt` from `@/components/pwa/install-prompt`.
     - Place `<InstallPrompt />` in the right side of the nav `<div>`, between the nav links block and `<LogoutButton />`.
 
-- [ ] 2.0 Service Worker & App Shell Caching
+- [x] 2.0 Service Worker & App Shell Caching
   - [x] 2.1 Create `public/sw.js`
     - Define a cache name constant: `const CACHE_NAME = 'dian-v1'`.
     - Define an array of assets to pre-cache on install: `['/offline', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png']`.
@@ -111,11 +111,11 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - This registers the service worker on every page load; the browser deduplicates re-registration automatically.
 
 - [ ] 3.0 IndexedDB Storage Layer
-  - [ ] 3.1 Install the `idb` package
+  - [x] 3.1 Install the `idb` package
     - Run `pnpm add idb`.
     - Verify it appears in `package.json` under `dependencies`.
 
-  - [ ] 3.2 Create `src/lib/idb.ts` — types and database open
+  - [x] 3.2 Create `src/lib/idb.ts` — types and database open
     - Export a TypeScript interface `LocalDocument` with all fields from FR-011:
       ```ts
       export interface LocalDocument {
@@ -142,15 +142,15 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Cache the DB promise in a module-level variable so `openDB()` is only called once per page load.
     - Use a `typeof window === 'undefined'` guard; return `null` on the server so this module is safe to import in files that may run in SSR context.
 
-  - [ ] 3.3 Add `upsertDocument` and `getDocument` helpers
+  - [x] 3.3 Add `upsertDocument` and `getDocument` helpers
     - `upsertDocument(doc: LocalDocument): Promise<void>` — opens the DB and calls `db.put('documents', doc)`. This creates the record if it doesn't exist and updates it if it does (because `put` uses the keyPath `id`).
     - `getDocument(id: string): Promise<LocalDocument | undefined>` — opens the DB and calls `db.get('documents', id)`.
 
-  - [ ] 3.4 Add `listDocuments` and `deleteDocument` helpers
+  - [x] 3.4 Add `listDocuments` and `deleteDocument` helpers
     - `listDocuments(): Promise<LocalDocument[]>` — opens the DB and calls `db.getAll('documents')`. Returns an empty array if the DB is null (server context).
     - `deleteDocument(id: string): Promise<void>` — opens the DB and calls `db.delete('documents', id)`.
 
-  - [ ] 3.5 Add `queryDocuments` for offline search
+  - [x] 3.5 Add `queryDocuments` for offline search
     - `queryDocuments(query: string, filters: SearchFilters): Promise<LocalDocument[]>` — performs an in-memory search over IndexedDB records.
     - Implementation steps:
       1. Call `listDocuments()` to get all records.
