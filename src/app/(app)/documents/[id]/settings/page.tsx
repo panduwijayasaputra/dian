@@ -12,10 +12,21 @@ export default async function DocumentSettingsPage({ params }: SettingsPageProps
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
+  const isAdmin = session.user.role === 'ADMIN'
   const { id } = await params
 
-  const document = await prisma.document.findUnique({ where: { id } })
-  if (!document || document.userId !== session.user.id) redirect('/documents')
+  const document = await prisma.document.findUnique({
+    where: { id },
+    include: { divisions: { select: { divisionId: true } } },
+  })
+  if (!document) redirect('/documents')
+
+  if (!isAdmin) {
+    const divisionId = session.user.divisionId
+    if (!divisionId) redirect('/documents')
+    const access = document.divisions.some((d) => d.divisionId === divisionId)
+    if (!access) redirect('/documents')
+  }
 
   const defaultValues: MetadataFormValues = {
     documentNumber: document.documentNumber ?? '',
@@ -25,7 +36,12 @@ export default async function DocumentSettingsPage({ params }: SettingsPageProps
     sender: document.sender ?? '',
     subject: document.subject ?? '',
     documentType: document.documentType ?? '',
+    divisionIds: document.divisions.map((d) => d.divisionId),
   }
+
+  const divisions = isAdmin
+    ? await prisma.division.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } })
+    : undefined
 
   return (
     <div className="mx-auto max-w-lg">
@@ -35,7 +51,7 @@ export default async function DocumentSettingsPage({ params }: SettingsPageProps
           <p className="mt-1 text-sm text-muted-foreground">{document.originalName}</p>
         )}
       </div>
-      <SettingsForm documentId={id} defaultValues={defaultValues} />
+      <SettingsForm documentId={id} defaultValues={defaultValues} divisions={divisions} />
     </div>
   )
 }

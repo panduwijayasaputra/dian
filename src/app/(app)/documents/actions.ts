@@ -26,8 +26,17 @@ export async function getDocumentViewUrl(documentId: string): Promise<ViewUrlRes
     where: { id: documentId },
   })
 
-  if (!document || document.userId !== session.user.id) {
+  if (!document) {
     return { success: false, error: 'Document not found.' }
+  }
+
+  if (session.user.role !== 'ADMIN') {
+    const divisionId = session.user.divisionId
+    if (!divisionId) return { success: false, error: 'Document not found.' }
+    const access = await prisma.documentDivision.findFirst({
+      where: { documentId, divisionId },
+    })
+    if (!access) return { success: false, error: 'Document not found.' }
   }
 
   if (!document.r2Key || document.status === 'LOCAL') {
@@ -148,17 +157,27 @@ export async function saveDocumentMetadata(
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
 
-  const updated = await prisma.document.update({
-    where: { id: documentId },
-    data: {
-      documentNumber: values.documentNumber || null,
-      documentDate,
-      sender: values.sender || null,
-      subject: values.subject || null,
-      documentType: (values.documentType as never) || null,
-      status: 'READY',
-    },
-  })
+  const [updated] = await prisma.$transaction([
+    prisma.document.update({
+      where: { id: documentId },
+      data: {
+        documentNumber: values.documentNumber || null,
+        documentDate,
+        sender: values.sender || null,
+        subject: values.subject || null,
+        documentType: (values.documentType as never) || null,
+        status: 'READY',
+      },
+    }),
+    prisma.documentDivision.deleteMany({ where: { documentId } }),
+  ])
+
+  if (values.divisionIds && values.divisionIds.length > 0) {
+    await prisma.documentDivision.createMany({
+      data: values.divisionIds.map((divisionId) => ({ documentId, divisionId })),
+      skipDuplicates: true,
+    })
+  }
 
   return { success: true, document: updated }
 }
@@ -166,9 +185,10 @@ export async function saveDocumentMetadata(
 export async function deleteDocument(documentId: string): Promise<SimpleResult> {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
+  if (session.user.role !== 'ADMIN') return { success: false, error: 'Not authorized.' }
 
   const document = await prisma.document.findUnique({ where: { id: documentId } })
-  if (!document || document.userId !== session.user.id) {
+  if (!document) {
     return { success: false, error: 'Document not found.' }
   }
 
@@ -191,24 +211,35 @@ export async function updateDocumentMetadata(
 ): Promise<SimpleResult> {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
+  if (session.user.role !== 'ADMIN') return { success: false, error: 'Not authorized.' }
 
   const document = await prisma.document.findUnique({ where: { id: documentId } })
-  if (!document || document.userId !== session.user.id) {
+  if (!document) {
     return { success: false, error: 'Document not found.' }
   }
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
 
-  await prisma.document.update({
-    where: { id: documentId },
-    data: {
-      documentNumber: values.documentNumber || null,
-      documentDate,
-      sender: values.sender || null,
-      subject: values.subject || null,
-      documentType: (values.documentType as never) || null,
-    },
-  })
+  await prisma.$transaction([
+    prisma.document.update({
+      where: { id: documentId },
+      data: {
+        documentNumber: values.documentNumber || null,
+        documentDate,
+        sender: values.sender || null,
+        subject: values.subject || null,
+        documentType: (values.documentType as never) || null,
+      },
+    }),
+    prisma.documentDivision.deleteMany({ where: { documentId } }),
+  ])
+
+  if (values.divisionIds && values.divisionIds.length > 0) {
+    await prisma.documentDivision.createMany({
+      data: values.divisionIds.map((divisionId) => ({ documentId, divisionId })),
+      skipDuplicates: true,
+    })
+  }
 
   return { success: true }
 }

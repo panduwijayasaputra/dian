@@ -5,8 +5,13 @@ import { DocumentsView } from '@/components/documents/documents-view'
 export default async function DocumentsPage() {
   const session = await auth()
 
+  const isAdmin = session!.user.role === 'ADMIN'
+  const divisionId = session!.user.divisionId
+
   const documents = await prisma.document.findMany({
-    where: { userId: session!.user!.id! },
+    where: isAdmin
+      ? { status: { not: 'LOCAL' } }
+      : { divisions: { some: { divisionId: divisionId ?? '' } } },
     orderBy: { createdAt: 'desc' },
   })
 

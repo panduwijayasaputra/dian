@@ -159,44 +159,44 @@ Based on: `docs/prd/prd-roles-and-divisions.md`
     - Renders a "Tambah Pengguna" button.
     - Renders `UserTable`.
 
-- [ ] 4.0 Document Access Control (Server-Side)
-  - [ ] 4.1 Create `src/components/documents/division-select.tsx`
+- [x] 4.0 Document Access Control (Server-Side)
+  - [x] 4.1 Create `src/components/documents/division-select.tsx`
     - A multi-select component (can use multiple `<Checkbox>` items inside a dropdown, or shadcn/ui `Popover` + checkboxes).
     - Props: `value: string[]` (selected division IDs), `onChange: (ids: string[]) => void`, `divisions: { id: string; name: string }[]`.
     - Shows selected division names as chips/badges below the selector.
-  - [ ] 4.2 Update `src/components/documents/metadata-form.tsx`
+  - [x] 4.2 Update `src/components/documents/metadata-form.tsx`
     - Add `divisionIds?: string[]` to the `MetadataFormValues` type.
     - Add optional props: `divisions?: { id: string; name: string }[]`.
     - If the `divisions` prop is provided, render the `DivisionSelect` component as a new field below the existing fields.
     - Wire the select's value and onChange to the form state.
-  - [ ] 4.3 Update `src/components/documents/metadata-review-sheet.tsx`
+  - [x] 4.3 Update `src/components/documents/metadata-review-sheet.tsx`
     - Add optional `divisions?: { id: string; name: string }[]` prop.
     - Pass `divisions` down to `MetadataForm`.
     - The parent upload flow (`upload-flow.tsx`) must pass `divisions` only when the user is an admin (fetch the list server-side and pass it as a prop to the client component).
-  - [ ] 4.4 Update `src/app/(app)/upload/upload-flow.tsx` to pass divisions to the review sheet
+  - [x] 4.4 Update `src/app/(app)/upload/upload-flow.tsx` to pass divisions to the review sheet
     - Fetch all divisions server-side (this component is rendered by a Server Component parent).
     - Pass the list to `MetadataReviewSheet` via the `divisions` prop so admins see the division selector.
-  - [ ] 4.5 Update `saveDocumentMetadata` in `src/app/(app)/documents/actions.ts`
+  - [x] 4.5 Update `saveDocumentMetadata` in `src/app/(app)/documents/actions.ts`
     - Accept `divisionIds?: string[]` as part of `MetadataFormValues`.
     - After saving the document metadata, delete all existing `DocumentDivision` rows for this document, then insert new ones for each `divisionId` in the list (this is a simple replace-all approach).
     - Wrap both the delete and insert in a Prisma transaction.
-  - [ ] 4.6 Update `getDocumentViewUrl` in `src/app/(app)/documents/actions.ts` to enforce division access
+  - [x] 4.6 Update `getDocumentViewUrl` in `src/app/(app)/documents/actions.ts` to enforce division access
     - Read `session.user.role` and `session.user.divisionId` from the session.
     - If admin: allow access to any document.
     - If regular user: instead of checking `document.userId === session.user.id`, query whether a `DocumentDivision` row exists where `documentId = document.id AND divisionId = session.user.divisionId`. If not found, return `{ success: false, error: 'Document not found.' }`.
-  - [ ] 4.7 Update the document list query to filter by division
+  - [x] 4.7 Update the document list query to filter by division
     - In whichever server action or page fetches the document list for the `(app)/documents/page.tsx`:
       - If admin: `prisma.document.findMany({ where: { status: { not: 'LOCAL' } } })`.
       - If regular user: `prisma.document.findMany({ where: { divisions: { some: { divisionId: session.user.divisionId } } } })`.
-  - [ ] 4.8 Update `src/app/(app)/search/actions.ts` to filter by division
+  - [x] 4.8 Update `src/app/(app)/search/actions.ts` to filter by division
     - In `metadataSearch`: replace the `where: { userId }` condition with the division-based condition (admin sees all; regular user filters via `divisions: { some: { divisionId } }`).
     - In `semanticSearch` and `hybridSearch`: add a JOIN on `DocumentDivision` and a `WHERE dd."divisionId" = ${divisionId}` clause for regular users. For admins, omit the join.
     - Extract the role/divisionId from `session.user` at the top of `searchDocuments` and thread it into all three helper functions.
-  - [ ] 4.9 Update `src/app/(app)/layout.tsx` to show role-specific navigation
+  - [x] 4.9 Update `src/app/(app)/layout.tsx` to show role-specific navigation
     - Call `auth()` to get the session (this is a Server Component).
     - Conditionally render the "Unggah" nav link only if `session.user.role === 'ADMIN'`.
     - Conditionally render an "Admin" nav link only if `session.user.role === 'ADMIN'`, pointing to `/admin`.
-  - [ ] 4.10 Update `src/app/(app)/documents/[id]/settings/settings-form.tsx` to include division editing
+  - [x] 4.10 Update `src/app/(app)/documents/[id]/settings/settings-form.tsx` to include division editing
     - Fetch current `DocumentDivision` rows for this document (pass as a prop from the parent server page).
     - Fetch all divisions (pass as a prop).
     - Render `DivisionSelect` in the form only if the user is admin.

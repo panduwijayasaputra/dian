@@ -58,11 +58,17 @@ function hasActiveFilters(filters: SearchFilters): boolean {
   )
 }
 
+function buildDivisionWhere(isAdmin: boolean, divisionId: string | null) {
+  if (isAdmin) return {}
+  return { divisions: { some: { divisionId: divisionId ?? '' } } }
+}
+
 async function metadataSearch(
-  userId: string,
+  isAdmin: boolean,
+  divisionId: string | null,
   filters: SearchFilters,
 ): Promise<SearchResult[]> {
-  const where: Record<string, unknown> = { userId }
+  const where: Record<string, unknown> = { ...buildDivisionWhere(isAdmin, divisionId) }
 
   if (filters.documentNumber) {
     where.documentNumber = { contains: filters.documentNumber, mode: 'insensitive' }
@@ -101,33 +107,57 @@ async function metadataSearch(
 
 // Semantic-only: no metadata filters, ranks purely by vector similarity.
 async function semanticSearch(
-  userId: string,
+  isAdmin: boolean,
+  divisionId: string | null,
   queryVector: number[],
 ): Promise<SearchResult[]> {
   const vectorStr = JSON.stringify(queryVector)
 
-  const rows = await prisma.$queryRaw<RawSearchRow[]>`
-    SELECT
-      d.id,
-      d."documentNumber",
-      d.sender,
-      d.subject,
-      d."documentDate",
-      d.summary,
-      d."extractedText",
-      d."r2Key",
-      MAX(1 - (dc.embedding <=> ${vectorStr}::vector)) AS similarity
-    FROM "Document" d
-    JOIN "DocumentChunk" dc ON dc."documentId" = d.id
-    WHERE d."userId" = ${userId}
-      AND dc.embedding IS NOT NULL
-      AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
-    GROUP BY
-      d.id, d."documentNumber", d.sender, d.subject,
-      d."documentDate", d.summary, d."extractedText", d."r2Key"
-    ORDER BY similarity DESC
-    LIMIT ${RESULT_LIMIT}
-  `
+  const rows = isAdmin
+    ? await prisma.$queryRaw<RawSearchRow[]>`
+        SELECT
+          d.id,
+          d."documentNumber",
+          d.sender,
+          d.subject,
+          d."documentDate",
+          d.summary,
+          d."extractedText",
+          d."r2Key",
+          MAX(1 - (dc.embedding <=> ${vectorStr}::vector)) AS similarity
+        FROM "Document" d
+        JOIN "DocumentChunk" dc ON dc."documentId" = d.id
+        WHERE dc.embedding IS NOT NULL
+          AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
+        GROUP BY
+          d.id, d."documentNumber", d.sender, d.subject,
+          d."documentDate", d.summary, d."extractedText", d."r2Key"
+        ORDER BY similarity DESC
+        LIMIT ${RESULT_LIMIT}
+      `
+    : await prisma.$queryRaw<RawSearchRow[]>`
+        SELECT
+          d.id,
+          d."documentNumber",
+          d.sender,
+          d.subject,
+          d."documentDate",
+          d.summary,
+          d."extractedText",
+          d."r2Key",
+          MAX(1 - (dc.embedding <=> ${vectorStr}::vector)) AS similarity
+        FROM "Document" d
+        JOIN "DocumentChunk" dc ON dc."documentId" = d.id
+        JOIN "DocumentDivision" dd ON dd."document_id" = d.id
+        WHERE dd."division_id" = ${divisionId}
+          AND dc.embedding IS NOT NULL
+          AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
+        GROUP BY
+          d.id, d."documentNumber", d.sender, d.subject,
+          d."documentDate", d.summary, d."extractedText", d."r2Key"
+        ORDER BY similarity DESC
+        LIMIT ${RESULT_LIMIT}
+      `
 
   return rows.map((row) => ({
     ...row,
@@ -136,9 +166,9 @@ async function semanticSearch(
 }
 
 // Hybrid: apply metadata filters first, then rank survivors by vector similarity.
-// Added in task 4.2 — placeholder calls metadataSearch for now.
 async function hybridSearch(
-  userId: string,
+  isAdmin: boolean,
+  divisionId: string | null,
   queryVector: number[],
   filters: SearchFilters,
 ): Promise<SearchResult[]> {
@@ -146,10 +176,13 @@ async function hybridSearch(
 
   // Build optional filter clauses
   const conditions: string[] = [
-    `d."userId" = '${userId}'`,
     `dc.embedding IS NOT NULL`,
     `1 - (dc.embedding <=> '${vectorStr}'::vector) >= ${SIMILARITY_THRESHOLD}`,
   ]
+
+  if (!isAdmin) {
+    conditions.push(`dd."division_id" = '${(divisionId ?? '').replace(/'/g, "''")}'`)
+  }
 
   if (filters.documentNumber) {
     conditions.push(`d."documentNumber" ILIKE '%${filters.documentNumber.replace(/'/g, "''")}%'`)
@@ -169,6 +202,10 @@ async function hybridSearch(
 
   const whereClause = conditions.join(' AND ')
 
+  const divisionJoin = isAdmin
+    ? ''
+    : `JOIN "DocumentDivision" dd ON dd."document_id" = d.id`
+
   const rows = await prisma.$queryRawUnsafe<RawSearchRow[]>(`
     SELECT
       d.id,
@@ -182,6 +219,7 @@ async function hybridSearch(
       MAX(1 - (dc.embedding <=> '${vectorStr}'::vector)) AS similarity
     FROM "Document" d
     JOIN "DocumentChunk" dc ON dc."documentId" = d.id
+    ${divisionJoin}
     WHERE ${whereClause}
     GROUP BY
       d.id, d."documentNumber", d.sender, d.subject,
@@ -205,7 +243,8 @@ export async function searchDocuments(
     return { success: false, results: [], isNLInterpreted: false, error: 'Not authenticated.' }
   }
 
-  const userId = session.user.id
+  const isAdmin = session.user.role === 'ADMIN'
+  const divisionId = session.user.divisionId ?? null
   const trimmedQuery = query.trim()
 
   if (!trimmedQuery && !hasActiveFilters(filters)) {
@@ -214,7 +253,7 @@ export async function searchDocuments(
 
   // Metadata-only path — no query text, only filters active.
   if (!trimmedQuery) {
-    const results = await metadataSearch(userId, filters)
+    const results = await metadataSearch(isAdmin, divisionId, filters)
     return { success: true, results, isNLInterpreted: false }
   }
 
@@ -263,13 +302,13 @@ export async function searchDocuments(
 
   // Embedding failed — fall back to metadata search with merged filters.
   if (!queryVector) {
-    const results = await metadataSearch(userId, mergedFilters)
+    const results = await metadataSearch(isAdmin, divisionId, mergedFilters)
     return { success: true, results, isNLInterpreted, parsedFilters }
   }
 
   const results = hasActiveFilters(mergedFilters)
-    ? await hybridSearch(userId, queryVector, mergedFilters)
-    : await semanticSearch(userId, queryVector)
+    ? await hybridSearch(isAdmin, divisionId, queryVector, mergedFilters)
+    : await semanticSearch(isAdmin, divisionId, queryVector)
 
   return { success: true, results, isNLInterpreted, parsedFilters }
 }

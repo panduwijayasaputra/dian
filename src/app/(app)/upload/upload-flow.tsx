@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation'
 import { MetadataReviewSheet } from '@/components/documents/metadata-review-sheet'
 import { DropZone } from '@/components/upload/drop-zone'
 
-export function UploadFlow() {
+type Division = { id: string; name: string }
+
+interface UploadFlowProps {
+  divisions: Division[]
+}
+
+export function UploadFlow({ divisions }: UploadFlowProps) {
   const router = useRouter()
   const [documentId, setDocumentId] = useState<string | null>(null)
 
@@ -21,6 +27,7 @@ export function UploadFlow() {
         open={!!documentId}
         documentId={documentId}
         onClose={handleSheetClose}
+        divisions={divisions}
       />
     </>
   )

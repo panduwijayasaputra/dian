@@ -15,6 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { ConfidenceLevel } from '@/lib/extract-metadata'
+import { DivisionSelect } from './division-select'
+
+type Division = { id: string; name: string }
 
 export interface MetadataFormValues {
   documentNumber: string
@@ -22,6 +25,7 @@ export interface MetadataFormValues {
   sender: string
   subject: string
   documentType: string
+  divisionIds?: string[]
 }
 
 const metadataSchema = z.object({
@@ -63,6 +67,7 @@ interface MetadataFormProps {
   onSubmit: (values: MetadataFormValues) => void | Promise<void>
   isSubmitting?: boolean
   submitLabel?: string
+  divisions?: Division[]
 }
 
 export function MetadataForm({
@@ -71,6 +76,7 @@ export function MetadataForm({
   onSubmit,
   isSubmitting = false,
   submitLabel = 'Simpan',
+  divisions,
 }: MetadataFormProps) {
   const {
     register,
@@ -86,11 +92,13 @@ export function MetadataForm({
       sender: '',
       subject: '',
       documentType: '',
+      divisionIds: [],
       ...defaultValues,
     },
   })
 
   const documentTypeValue = watch('documentType')
+  const divisionIds = watch('divisionIds') ?? []
 
   function FieldLabel({
     htmlFor,
@@ -176,6 +184,18 @@ export function MetadataForm({
           </SelectContent>
         </Select>
       </div>
+
+      {divisions && (
+        <div>
+          <Label className="mb-1.5 block">Divisi</Label>
+          <DivisionSelect
+            value={divisionIds}
+            onChange={(ids) => setValue('divisionIds', ids)}
+            divisions={divisions}
+            disabled={isSubmitting}
+          />
+        </div>
+      )}
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Menyimpan…' : submitLabel}

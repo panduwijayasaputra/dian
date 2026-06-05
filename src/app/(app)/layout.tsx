@@ -1,9 +1,13 @@
 import Link from 'next/link'
+import { auth } from '@/auth'
 import { LogoutButton } from '@/components/auth/logout-button'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { SyncButton } from '@/components/pwa/sync-button'
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth()
+  const isAdmin = session?.user?.role === 'ADMIN'
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
@@ -16,12 +20,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link href="/documents" className="hover:text-foreground transition-colors">
                 Dokumen
               </Link>
-              <Link href="/upload" className="hover:text-foreground transition-colors">
-                Unggah
-              </Link>
+              {isAdmin && (
+                <Link href="/upload" className="hover:text-foreground transition-colors">
+                  Unggah
+                </Link>
+              )}
               <Link href="/search" className="hover:text-foreground transition-colors">
                 Cari
               </Link>
+              {isAdmin && (
+                <Link href="/admin" className="hover:text-foreground transition-colors">
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -17,10 +17,13 @@ import {
 import type { ExtractionResult } from '@/lib/extract-metadata'
 import { MetadataForm, type MetadataFormValues } from './metadata-form'
 
+type Division = { id: string; name: string }
+
 interface MetadataReviewSheetProps {
   open: boolean
   documentId: string | null
   onClose: () => void
+  divisions?: Division[]
 }
 
 function extractionToDefaults(result: ExtractionResult): Partial<MetadataFormValues> {
@@ -45,7 +48,7 @@ function extractionToSuggestions(result: ExtractionResult) {
   return suggestions
 }
 
-export function MetadataReviewSheet({ open, documentId, onClose }: MetadataReviewSheetProps) {
+export function MetadataReviewSheet({ open, documentId, onClose, divisions }: MetadataReviewSheetProps) {
   const [isExtracting, setIsExtracting] = useState(false)
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -116,6 +119,7 @@ export function MetadataReviewSheet({ open, documentId, onClose }: MetadataRevie
               onSubmit={handleSave}
               isSubmitting={isSubmitting}
               submitLabel="Simpan Dokumen"
+              divisions={divisions}
             />
             {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
             <div className="mt-4 border-t pt-4">

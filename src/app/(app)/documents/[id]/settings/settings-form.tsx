@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { updateDocumentMetadata } from '@/app/(app)/documents/actions'
 import { MetadataForm, type MetadataFormValues } from '@/components/documents/metadata-form'
 
+type Division = { id: string; name: string }
+
 interface SettingsFormProps {
   documentId: string
   defaultValues: MetadataFormValues
+  divisions?: Division[]
 }
 
-export function SettingsForm({ documentId, defaultValues }: SettingsFormProps) {
+export function SettingsForm({ documentId, defaultValues, divisions }: SettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,6 +37,7 @@ export function SettingsForm({ documentId, defaultValues }: SettingsFormProps) {
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         submitLabel="Simpan Perubahan"
+        divisions={divisions}
       />
       {success && (
         <p className="mt-3 text-sm text-green-600">Metadata berhasil disimpan.</p>
