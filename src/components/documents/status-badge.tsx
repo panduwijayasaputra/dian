@@ -14,6 +14,14 @@ const STATUS_CONFIG: Record<DocumentStatus, { label: string; className: string }
     label: 'Processing',
     className: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
   },
+  EXTRACTING: {
+    label: 'Mengekstrak',
+    className: 'bg-purple-100 text-purple-700 hover:bg-purple-100',
+  },
+  REVIEW: {
+    label: 'Perlu Ditinjau',
+    className: 'bg-blue-100 text-blue-700 hover:bg-blue-100',
+  },
   READY: {
     label: 'Ready',
     className: 'bg-green-100 text-green-700 hover:bg-green-100',
