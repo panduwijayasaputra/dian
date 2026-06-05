@@ -164,7 +164,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       9. Return the filtered, sorted array.
     - Import `SearchFilters` type from `@/app/(app)/search/actions` to keep types consistent.
 
-- [ ] 4.0 Offline Upload & Offline Search Integration
+- [x] 4.0 Offline Upload & Offline Search Integration
   - [x] 4.1 Add offline upload path to `drop-zone.tsx`
     - Open `src/components/upload/drop-zone.tsx`.
     - In the `useEffect` that processes the upload queue, before calling `uploadDocument(formData)`, check `navigator.onLine`.
@@ -239,7 +239,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       5. If the local doc is not found at all in IndexedDB, also set the error.
 
 - [ ] 5.0 Sync Engine & Sync UI
-  - [ ] 5.1 Create `src/lib/sync.ts` — upload pending
+  - [x] 5.1 Create `src/lib/sync.ts` — upload pending
     - Create the file and export `async function uploadPending(): Promise<{ uploaded: number; failed: number }>`.
     - Implementation:
       1. Import `listDocuments`, `upsertDocument`, `deleteDocument` from `@/lib/idb`.
@@ -253,7 +253,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
          e. On failure: log a warning, leave the record as `pending_sync` so it retries next sync.
       5. Return counts of uploaded and failed documents.
 
-  - [ ] 5.2 Add `downloadAll` and `syncAll` to `src/lib/sync.ts`
+  - [x] 5.2 Add `downloadAll` and `syncAll` to `src/lib/sync.ts`
     - Export `async function downloadAll(): Promise<void>`.
     - Implementation:
       1. Import `upsertDocument`, `listDocuments` from `@/lib/idb`.
@@ -266,7 +266,7 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
     - Export `async function syncAll(): Promise<void>`.
     - Implementation: call `await uploadPending()` then `await downloadAll()`.
 
-  - [ ] 5.3 Create `src/components/pwa/sync-button.tsx`
+  - [x] 5.3 Create `src/components/pwa/sync-button.tsx`
     - Mark as `'use client'`.
     - State:
       - `isSyncing: boolean` — true while `syncAll()` is running.
@@ -297,13 +297,13 @@ Based on [prd-phase-6-offline-first.md](../prd/prd-phase-6-offline-first.md)
       - If `pendingCount > 0` and not syncing, show a `<Badge>` with the count as an absolute-positioned overlay on the button.
       - If `lastSynced` is set and `isOnline` and not syncing, show a small text beneath: "Tersinkron [X] mnt lalu" using a simple time-ago calculation.
 
-  - [ ] 5.4 Add `SyncButton` to the app nav header
+  - [x] 5.4 Add `SyncButton` to the app nav header
     - Open `src/app/(app)/layout.tsx`.
     - Import `SyncButton` from `@/components/pwa/sync-button`.
     - Place `<SyncButton />` in the right section of the nav, between `<InstallPrompt />` and `<LogoutButton />`.
     - Wrap it in a `<div className="flex items-center gap-2">` together with `<InstallPrompt />` and `<LogoutButton />` for consistent alignment.
 
-  - [ ] 5.5 Seed IndexedDB on first app load
+  - [x] 5.5 Seed IndexedDB on first app load
     - Open `src/components/pwa/sync-button.tsx`.
     - In the `useEffect` that runs on mount, after setting up event listeners, check if IndexedDB is empty:
       1. Call `listDocuments()` — if the result is an empty array, trigger `handleSync()` immediately (this populates IndexedDB on first load while online).
