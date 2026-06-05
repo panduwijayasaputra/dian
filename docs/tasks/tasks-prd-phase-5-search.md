@@ -228,8 +228,8 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
     - Show a small `Badge` or label below the search bar reading `"AI menafsirkan pencarian Anda"` (AI interpreted your search) when `isNLInterpreted` is true.
     - The badge should disappear if the user manually edits a filter or clears the query.
 
-- [ ] 5.0 Search result cards, count, empty state, and debug mode
-  - [ ] 5.1 Create `src/components/search/search-result-card.tsx`
+- [x] 5.0 Search result cards, count, empty state, and debug mode
+  - [x] 5.1 Create `src/components/search/search-result-card.tsx`
     - Client component.
     - Props: `result: SearchResult`, `similarity?: number`, `showDebug?: boolean`, `onOpen: (result: SearchResult) => void`.
     - Render using shadcn `Card`:
@@ -239,16 +239,16 @@ Based on [prd-phase-5-search.md](../prd/prd-phase-5-search.md)
       - Fourth row: excerpt — first 150 characters of `summary`, or first 150 of `extractedText` if no summary, or italicized `"Tidak ada ringkasan tersedia"` if neither.
       - If `showDebug && similarity != null`: show a small `Badge` at the bottom-right with the similarity score formatted as a percentage: `Math.round(similarity * 100) + '%'`.
     - The entire card is wrapped in a `<button>` or has an `onClick` that calls `onOpen(result)`.
-  - [ ] 5.2 Wire result cards to document viewer in `SearchView`
+  - [x] 5.2 Wire result cards to document viewer in `SearchView`
     - Import `DocumentViewerModal` from `@/components/documents/document-viewer-modal.tsx`.
     - Add state: `selectedDocument: SearchResult | null`.
     - Render `<DocumentViewerModal>` at the bottom of `SearchView`, passing `selectedDocument?.id` and controlling open/close.
     - Pass `onOpen={(result) => setSelectedDocument(result)}` to each `<SearchResultCard>`.
-  - [ ] 5.3 Add result count and empty state to `SearchView`
+  - [x] 5.3 Add result count and empty state to `SearchView`
     - Above the result cards, when `hasSearched` is true, show:
       - If `results.length > 0`: `"{results.length} dokumen ditemukan"`
       - If `results.length === 0`: a centered message — `"Tidak ada dokumen ditemukan. Coba kata kunci lain atau ubah filter."` with a muted subtext — `"Pastikan Anda terhubung ke internet untuk pencarian semantik."`.
-  - [ ] 5.4 Add debug mode
+  - [x] 5.4 Add debug mode
     - In `src/app/(app)/search/page.tsx`, read the `debug` URL search param from the `searchParams` prop (Next.js passes this to server components).
     - Pass `debug={searchParams.debug === '1'}` as a prop to `<SearchView>`.
     - In `SearchView`, pass `showDebug={debug}` down to each `<SearchResultCard>`.

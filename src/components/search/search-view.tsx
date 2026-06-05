@@ -5,8 +5,10 @@ import { searchDocuments } from '@/app/(app)/search/actions'
 import type { SearchFilters, SearchResult } from '@/app/(app)/search/actions'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { DocumentViewerModal } from '@/components/documents/document-viewer-modal'
 import { FilterPanel } from '@/components/search/filter-panel'
 import { SearchBar } from '@/components/search/search-bar'
+import { SearchResultCard } from '@/components/search/search-result-card'
 
 export type { SearchFilters, SearchResult }
 
@@ -17,6 +19,7 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
   const [isLoading, setIsLoading] = useState(false)
   const [isNLInterpreted, setIsNLInterpreted] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<SearchResult | null>(null)
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true,
   )
@@ -107,12 +110,39 @@ export function SearchView({ debug: _debug }: { debug?: boolean }) {
 
       <FilterPanel filters={filters} onChange={setFilters} />
 
-      {/* Results — wired in tasks 5.1–5.3 */}
-      {hasSearched && (
-        <p className="text-sm text-muted-foreground">
-          {results.length} dokumen ditemukan
-        </p>
+      {/* Results */}
+      {hasSearched && results.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {results.length} dokumen ditemukan
+          </p>
+          {results.map((result) => (
+            <SearchResultCard
+              key={result.id}
+              result={result}
+              showDebug={_debug}
+              onOpen={setSelectedDocument}
+            />
+          ))}
+        </div>
       )}
+
+      {hasSearched && results.length === 0 && !isLoading && (
+        <div className="py-12 text-center space-y-1">
+          <p className="text-sm font-medium">
+            Tidak ada dokumen ditemukan. Coba kata kunci lain atau ubah filter.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Pastikan Anda terhubung ke internet untuk pencarian semantik.
+          </p>
+        </div>
+      )}
+
+      <DocumentViewerModal
+        documentId={selectedDocument?.id ?? null}
+        isOpen={!!selectedDocument}
+        onClose={() => setSelectedDocument(null)}
+      />
     </div>
   )
 }
