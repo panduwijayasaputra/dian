@@ -6,9 +6,14 @@ export interface LocalDocument {
   document_number: string | null
   document_date: string | null  // ISO date string e.g. "2025-01-15"
   sender: string | null
+  receiver: string | null
   subject: string | null
+  urgency: string | null
+  security: string | null
+  deadline: string | null  // ISO date string
   summary: string | null
   extracted_text: string | null
+  extraction_status: 'pending' | 'completed' | 'failed' | 'manual_only'
   status: 'pending_sync' | 'synced' | 'processing' | 'ready' | 'failed'
   r2_key: string | null
   file_blob: Blob | null
@@ -36,7 +41,7 @@ export function openDB(): Promise<IDBPDatabase<DianDB>> | null {
   if (typeof window === 'undefined') return null
 
   if (!dbPromise) {
-    dbPromise = idbOpen<DianDB>('dian-db', 2, {
+    dbPromise = idbOpen<DianDB>('dian-db', 4, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const store = db.createObjectStore('documents', { keyPath: 'id' })
@@ -46,6 +51,8 @@ export function openDB(): Promise<IDBPDatabase<DianDB>> | null {
         }
         // v2: division_ids field added to LocalDocument — no structural store change needed;
         // existing records without the field will have it default to [] at read time.
+        // v4: extraction_status field added to LocalDocument — no structural store change needed;
+        // existing records without the field are treated as 'pending' via nullish coalescing at read time.
       },
     })
   }
@@ -118,7 +125,7 @@ export async function queryDocuments(
         includes(d.sender, q) ||
         includes(d.subject, q) ||
         includes(d.summary, q) ||
-        includes(d.extracted_text, q),
+        ((d.extraction_status ?? 'pending') === 'completed' && includes(d.extracted_text, q)),
     )
   }
 
