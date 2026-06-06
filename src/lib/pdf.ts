@@ -70,7 +70,11 @@ export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Prom
     // pdfjs v6 removed pdf.worker.mjs from legacy/build; reference the standard build worker.
     // process.cwd() reliably returns the project root in Next.js server actions.
     pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${process.cwd()}/node_modules/pdfjs-dist/build/pdf.worker.mjs`
-    const { createCanvas } = await import('canvas')
+    const { createCanvas, Image } = await import('canvas')
+    // pdfjs uses `new Image()` internally when rendering PDFs with inline images.
+    // In Node.js, Image is not a global — set it so pdfjs creates canvas-compatible Image objects.
+    const g = globalThis as Record<string, unknown>
+    if (!g.Image) g.Image = Image
 
     const data = new Uint8Array(buffer)
     const pdf = await pdfjsLib.getDocument({ data, verbosity: 0 }).promise
@@ -81,9 +85,10 @@ export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Prom
       const page = await pdf.getPage(i)
       const viewport = page.getViewport({ scale: 2.0 })
       const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height))
+      const canvasContext = canvas.getContext('2d')
 
       await page.render({
-        canvas: canvas as unknown as HTMLCanvasElement,
+        canvasContext: canvasContext as unknown as CanvasRenderingContext2D,
         viewport,
       }).promise
 
