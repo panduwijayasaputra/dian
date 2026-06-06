@@ -127,7 +127,8 @@ async function semanticSearch(
           MAX(1 - (dc.embedding <=> ${vectorStr}::vector)) AS similarity
         FROM "Document" d
         JOIN "DocumentChunk" dc ON dc."documentId" = d.id
-        WHERE dc.embedding IS NOT NULL
+        WHERE d."extractionStatus" = 'completed'
+          AND dc.embedding IS NOT NULL
           AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
         GROUP BY
           d.id, d."documentNumber", d.sender, d.subject,
@@ -149,7 +150,8 @@ async function semanticSearch(
         FROM "Document" d
         JOIN "DocumentChunk" dc ON dc."documentId" = d.id
         JOIN "DocumentDivision" dd ON dd."document_id" = d.id
-        WHERE dd."division_id" = ${divisionId}
+        WHERE d."extractionStatus" = 'completed'
+          AND dd."division_id" = ${divisionId}
           AND dc.embedding IS NOT NULL
           AND 1 - (dc.embedding <=> ${vectorStr}::vector) >= ${SIMILARITY_THRESHOLD}
         GROUP BY
@@ -176,6 +178,7 @@ async function hybridSearch(
 
   // Build optional filter clauses
   const conditions: string[] = [
+    `d."extractionStatus" = 'completed'`,
     `dc.embedding IS NOT NULL`,
     `1 - (dc.embedding <=> '${vectorStr}'::vector) >= ${SIMILARITY_THRESHOLD}`,
   ]
