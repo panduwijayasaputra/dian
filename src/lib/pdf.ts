@@ -65,8 +65,11 @@ export async function getBufferFromR2(r2Key: string): Promise<Buffer | null> {
 
 export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Promise<string[]> {
   try {
-    const pdfjsLib = await import('pdfjs-dist')
-    pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs') as any
+    // pdfjs v6 removed pdf.worker.mjs from legacy/build; reference the standard build worker.
+    // process.cwd() reliably returns the project root in Next.js server actions.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${process.cwd()}/node_modules/pdfjs-dist/build/pdf.worker.mjs`
     const { createCanvas } = await import('canvas')
 
     const data = new Uint8Array(buffer)
@@ -78,7 +81,6 @@ export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Prom
       const page = await pdf.getPage(i)
       const viewport = page.getViewport({ scale: 2.0 })
       const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height))
-      const ctx = canvas.getContext('2d')
 
       await page.render({
         canvas: canvas as unknown as HTMLCanvasElement,
