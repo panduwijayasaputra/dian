@@ -70,14 +70,29 @@ export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Prom
     // pdfjs v6 removed pdf.worker.mjs from legacy/build; reference the standard build worker.
     // process.cwd() reliably returns the project root in Next.js server actions.
     pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${process.cwd()}/node_modules/pdfjs-dist/build/pdf.worker.mjs`
-    const { createCanvas, Image } = await import('canvas')
-    // pdfjs uses `new Image()` internally when rendering PDFs with inline images.
-    // In Node.js, Image is not a global — set it so pdfjs creates canvas-compatible Image objects.
-    const g = globalThis as Record<string, unknown>
-    if (!g.Image) g.Image = Image
+    const { createCanvas } = await import('canvas')
+
+    // pdfjs creates internal canvases for inline image rendering. Without a NodeCanvasFactory,
+    // it falls back to DOM APIs (document.createElement / OffscreenCanvas) that don't exist in
+    // Node.js, producing objects that node-canvas's ctx.drawImage() rejects.
+    type CanvasAndContext = { canvas: ReturnType<typeof createCanvas>; context: ReturnType<ReturnType<typeof createCanvas>['getContext']> }
+    const canvasFactory = {
+      create(width: number, height: number): CanvasAndContext {
+        const canvas = createCanvas(width, height)
+        return { canvas, context: canvas.getContext('2d') }
+      },
+      reset(cc: CanvasAndContext, width: number, height: number) {
+        cc.canvas.width = width
+        cc.canvas.height = height
+      },
+      destroy(cc: CanvasAndContext) {
+        cc.canvas.width = 0
+        cc.canvas.height = 0
+      },
+    }
 
     const data = new Uint8Array(buffer)
-    const pdf = await pdfjsLib.getDocument({ data, verbosity: 0 }).promise
+    const pdf = await pdfjsLib.getDocument({ data, verbosity: 0, canvasFactory }).promise
     const numPages = Math.min(pdf.numPages, maxPages)
     const images: string[] = []
 
