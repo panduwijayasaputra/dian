@@ -9,7 +9,13 @@ import { r2Client } from './r2'
 export function isGarbled(text: string): boolean {
   if (!text || text.length < 50) return true
   const readable = (text.match(/[\p{L}\p{N}\s.,\-()/:"'!?]/gu) ?? []).length
-  return readable / text.length < 0.5
+  if (readable / text.length < 0.5) return true
+  // High + density is a ToUnicode mapping failure artifact in garbled Indonesian PDFs
+  const plusDensity = (text.match(/\+/g) ?? []).length / text.length
+  if (plusDensity > 0.01) return true
+  // High % density is another BSrE encoding artifact (dilutes + density in whitespace-heavy output)
+  const percentDensity = (text.match(/%/g) ?? []).length / text.length
+  return percentDensity > 0.015
 }
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
@@ -32,7 +38,10 @@ export async function extractTextFromR2(r2Key: string): Promise<string> {
     if (!response.Body) return ''
 
     const buffer = await streamToBuffer(response.Body as Readable)
+    const warn = console.warn
+    console.warn = () => {}
     const result = await pdfParse(buffer)
+    console.warn = warn
     return result.text ?? ''
   } catch {
     return ''
@@ -51,5 +60,39 @@ export async function getBufferFromR2(r2Key: string): Promise<Buffer | null> {
     return streamToBuffer(response.Body as Readable)
   } catch {
     return null
+  }
+}
+
+export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Promise<string[]> {
+  try {
+    const pdfjsLib = await import('pdfjs-dist')
+    pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+    const { createCanvas } = await import('canvas')
+
+    const data = new Uint8Array(buffer)
+    const pdf = await pdfjsLib.getDocument({ data, verbosity: 0 }).promise
+    const numPages = Math.min(pdf.numPages, maxPages)
+    const images: string[] = []
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i)
+      const viewport = page.getViewport({ scale: 2.0 })
+      const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height))
+      const ctx = canvas.getContext('2d')
+
+      await page.render({
+        canvas: canvas as unknown as HTMLCanvasElement,
+        viewport,
+      }).promise
+
+      images.push(canvas.toBuffer('image/png').toString('base64'))
+      page.cleanup()
+    }
+
+    await pdf.cleanup()
+    return images
+  } catch (err) {
+    console.error('[pdf] renderPDFPagesToImages failed:', err)
+    return []
   }
 }
