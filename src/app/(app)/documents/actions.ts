@@ -3,10 +3,10 @@
 import { auth } from '@/auth'
 import type { LocalDocument } from '@/lib/idb'
 import { chunkText } from '@/lib/chunk-text'
-import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
+import { extractMetadataFromText, extractFromPDFVision, type ExtractionResult } from '@/lib/extract-metadata'
 import { generateEmbedding } from '@/lib/generate-embeddings'
 import { generateSummary } from '@/lib/generate-summary'
-import { extractTextFromR2 } from '@/lib/pdf'
+import { extractTextFromR2, isGarbled, getBufferFromR2 } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import type { MetadataFormValues } from '@/components/documents/metadata-form'
@@ -70,21 +70,37 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
     data: { status: 'EXTRACTING' },
   })
 
-  const text = await extractTextFromR2(document.r2Key)
-  const result = await extractMetadataFromText(text)
-  const summary = await generateSummary(text)
+  const rawText = await extractTextFromR2(document.r2Key)
+
+  let extractedText = rawText
+  let result: ExtractionResult
+
+  if (isGarbled(rawText)) {
+    const buffer = await getBufferFromR2(document.r2Key)
+    if (buffer) {
+      const vision = await extractFromPDFVision(buffer)
+      extractedText = vision.text
+      result = vision.result
+    } else {
+      result = await extractMetadataFromText(rawText)
+    }
+  } else {
+    result = await extractMetadataFromText(rawText)
+  }
+
+  const summary = await generateSummary(extractedText)
 
   await prisma.document.update({
     where: { id: documentId },
     data: {
-      extractedText: text || null,
+      extractedText: extractedText || null,
       extractionResult: result as object,
       summary,
       status: 'REVIEW',
     },
   })
 
-  const chunks = chunkText(text)
+  const chunks = chunkText(extractedText)
   if (chunks.length > 0) {
     try {
       await prisma.documentChunk.createMany({
@@ -156,6 +172,7 @@ export async function saveDocumentMetadata(
   }
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
+  const deadline = values.deadline ? new Date(values.deadline) : null
 
   const [updated] = await prisma.$transaction([
     prisma.document.update({
@@ -164,8 +181,12 @@ export async function saveDocumentMetadata(
         documentNumber: values.documentNumber || null,
         documentDate,
         sender: values.sender || null,
+        receiver: values.receiver || null,
         subject: values.subject || null,
         documentType: (values.documentType as never) || null,
+        urgency: (values.urgency as never) || null,
+        security: (values.security as never) || null,
+        deadline,
         status: 'READY',
       },
     }),
@@ -219,6 +240,7 @@ export async function updateDocumentMetadata(
   }
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
+  const deadline = values.deadline ? new Date(values.deadline) : null
 
   await prisma.$transaction([
     prisma.document.update({
@@ -227,8 +249,12 @@ export async function updateDocumentMetadata(
         documentNumber: values.documentNumber || null,
         documentDate,
         sender: values.sender || null,
+        receiver: values.receiver || null,
         subject: values.subject || null,
         documentType: (values.documentType as never) || null,
+        urgency: (values.urgency as never) || null,
+        security: (values.security as never) || null,
+        deadline,
       },
     }),
     prisma.documentDivision.deleteMany({ where: { documentId } }),
@@ -273,7 +299,11 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
       documentNumber: true,
       documentDate: true,
       sender: true,
+      receiver: true,
       subject: true,
+      urgency: true,
+      security: true,
+      deadline: true,
       summary: true,
       extractedText: true,
       r2Key: true,
@@ -290,7 +320,11 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
     document_number: doc.documentNumber,
     document_date: doc.documentDate ? doc.documentDate.toISOString().split('T')[0] : null,
     sender: doc.sender,
+    receiver: doc.receiver,
     subject: doc.subject,
+    urgency: doc.urgency,
+    security: doc.security,
+    deadline: doc.deadline ? doc.deadline.toISOString().split('T')[0] : null,
     summary: doc.summary,
     extracted_text: doc.extractedText,
     status: mapStatus(doc.status),
