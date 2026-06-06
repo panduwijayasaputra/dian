@@ -41,6 +41,26 @@ enum EmbeddingStatus {
   FAILED
 }
 
+enum ExtractionStatus {
+  pending
+  completed
+  failed
+  manual_only
+}
+
+enum UrgencyLevel {
+  BIASA
+  SEGERA
+  SANGAT_SEGERA
+}
+
+enum SecurityLevel {
+  BIASA
+  TERBATAS
+  RAHASIA
+  SANGAT_RAHASIA
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -58,6 +78,7 @@ model User {
 model Division {
   id                String             @id @default(cuid())
   name              String             @unique
+  color             String             @default("blue")
   createdAt         DateTime           @default(now())
   users             User[]
   documentDivisions DocumentDivision[]
@@ -73,13 +94,18 @@ model Document {
   documentNumber String?
   documentDate   DateTime?
   sender         String?
+  receiver       String?
   subject        String?
+  urgency        UrgencyLevel?
+  security       SecurityLevel?
+  deadline       DateTime?
   fileSizeBytes    Int?
   originalName     String?
   extractedText    String?
   extractionResult Json?
   summary          String?
   embeddingStatus  EmbeddingStatus  @default(PENDING)
+  extractionStatus ExtractionStatus @default(pending)
   chunks           DocumentChunk[]
   divisions        DocumentDivision[]
   createdAt        DateTime         @default(now())
