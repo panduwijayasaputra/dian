@@ -72,23 +72,40 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
 
   const rawText = await extractTextFromR2(document.r2Key)
 
-  let extractedText = rawText
+  let extractedText: string | null = rawText
   let result: ExtractionResult
+  let extractionStatus: 'pending' | 'completed' | 'failed' | 'manual_only' = 'pending'
 
-  if (isGarbled(rawText)) {
+  const garbled = isGarbled(rawText)
+  console.log(`[extract] doc=${documentId} garbled=${garbled} rawLen=${rawText.length}`)
+
+  if (garbled) {
     const buffer = await getBufferFromR2(document.r2Key)
     if (buffer) {
+      console.log(`[extract] calling vision fallback`)
       const vision = await extractFromPDFVision(buffer)
-      extractedText = vision.text
-      result = vision.result
+      console.log(`[extract] vision text len=${vision.text.length} fields=${JSON.stringify(Object.fromEntries(Object.entries(vision.result).map(([k, v]) => [k, v.value])))}`)
+      const visionGarbled = vision.text.length === 0 || isGarbled(vision.text)
+      if (!visionGarbled) {
+        extractedText = vision.text
+        result = vision.result
+        extractionStatus = 'completed'
+      } else {
+        console.log(`[extract] vision returned garbled or empty, falling back to text extraction`)
+        extractedText = null
+        result = await extractMetadataFromText(rawText)
+        extractionStatus = 'manual_only'
+      }
     } else {
       result = await extractMetadataFromText(rawText)
+      extractionStatus = 'failed'
     }
   } else {
     result = await extractMetadataFromText(rawText)
+    extractionStatus = 'completed'
   }
 
-  const summary = await generateSummary(extractedText)
+  const summary = extractionStatus === 'completed' ? await generateSummary(extractedText) : null
 
   await prisma.document.update({
     where: { id: documentId },
@@ -97,56 +114,61 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
       extractionResult: result as object,
       summary,
       status: 'REVIEW',
+      extractionStatus,
     },
   })
 
-  const chunks = chunkText(extractedText)
-  if (chunks.length > 0) {
-    try {
-      await prisma.documentChunk.createMany({
-        data: chunks.map((content, chunkIndex) => ({ documentId, content, chunkIndex })),
-      })
-    } catch (err) {
-      console.error('[chunk] Failed to store chunks:', err)
+  if (extractionStatus === 'completed') {
+    const chunks = chunkText(extractedText)
+    if (chunks.length > 0) {
+      try {
+        await prisma.documentChunk.createMany({
+          data: chunks.map((content, chunkIndex) => ({ documentId, content, chunkIndex })),
+        })
+      } catch (err) {
+        console.error('[chunk] Failed to store chunks:', err)
+      }
     }
   }
 
-  try {
-    const storedChunks = await prisma.documentChunk.findMany({
-      where: { documentId },
-      orderBy: { chunkIndex: 'asc' },
-    })
-
-    if (storedChunks.length > 0) {
-      await prisma.document.update({
-        where: { id: documentId },
-        data: { embeddingStatus: 'PROCESSING' },
+  if (extractionStatus === 'completed') {
+    try {
+      const storedChunks = await prisma.documentChunk.findMany({
+        where: { documentId },
+        orderBy: { chunkIndex: 'asc' },
       })
 
-      let successCount = 0
-      for (const chunk of storedChunks) {
-        const vector = await generateEmbedding(chunk.content)
-        if (vector) {
-          await prisma.$executeRaw`
-            UPDATE "DocumentChunk"
-            SET embedding = ${JSON.stringify(vector)}::vector
-            WHERE id = ${chunk.id}
-          `
-          successCount++
-        }
-      }
+      if (storedChunks.length > 0) {
+        await prisma.document.update({
+          where: { id: documentId },
+          data: { embeddingStatus: 'PROCESSING' },
+        })
 
+        let successCount = 0
+        for (const chunk of storedChunks) {
+          const vector = await generateEmbedding(chunk.content)
+          if (vector) {
+            await prisma.$executeRaw`
+              UPDATE "DocumentChunk"
+              SET embedding = ${JSON.stringify(vector)}::vector
+              WHERE id = ${chunk.id}
+            `
+            successCount++
+          }
+        }
+
+        await prisma.document.update({
+          where: { id: documentId },
+          data: { embeddingStatus: successCount > 0 ? 'COMPLETED' : 'FAILED' },
+        })
+      }
+    } catch (err) {
+      console.error('[embedding] Pipeline error:', err)
       await prisma.document.update({
         where: { id: documentId },
-        data: { embeddingStatus: successCount > 0 ? 'COMPLETED' : 'FAILED' },
+        data: { embeddingStatus: 'FAILED' },
       })
     }
-  } catch (err) {
-    console.error('[embedding] Pipeline error:', err)
-    await prisma.document.update({
-      where: { id: documentId },
-      data: { embeddingStatus: 'FAILED' },
-    })
   }
 
   const updated = await prisma.document.findUniqueOrThrow({ where: { id: documentId } })
