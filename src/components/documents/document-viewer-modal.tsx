@@ -15,9 +15,10 @@ interface DocumentViewerModalProps {
   documentId: string | null
   isOpen: boolean
   onClose: () => void
+  extractionStatus?: string
 }
 
-export function DocumentViewerModal({ documentId, isOpen, onClose }: DocumentViewerModalProps) {
+export function DocumentViewerModal({ documentId, isOpen, onClose, extractionStatus }: DocumentViewerModalProps) {
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -73,9 +74,14 @@ export function DocumentViewerModal({ documentId, isOpen, onClose }: DocumentVie
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex h-[90vh] max-w-5xl flex-col gap-0 p-0">
+      <DialogContent className="flex h-dvh w-screen max-w-none top-0 left-0 translate-x-0 translate-y-0 flex-col gap-0 p-0 rounded-none border-0 sm:max-w-none">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Lihat Dokumen</DialogTitle>
+          {(extractionStatus === 'failed' || extractionStatus === 'manual_only') && (
+            <p className="text-sm text-amber-600 mt-1">
+              Kualitas ekstraksi teks rendah. Dokumen ini mungkin menggunakan font atau encoding yang tidak didukung. Harap periksa dan masukkan metadata secara manual.
+            </p>
+          )}
         </DialogHeader>
 
         <div className="flex flex-1 items-center justify-center overflow-hidden">
