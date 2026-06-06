@@ -48,6 +48,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@prisma/engines",
+      "canvas",
       "prisma",
       "msw"
     ]

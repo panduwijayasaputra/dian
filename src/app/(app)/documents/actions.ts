@@ -85,16 +85,22 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
       console.log(`[extract] calling vision fallback`)
       const vision = await extractFromPDFVision(buffer)
       console.log(`[extract] vision text len=${vision.text.length} fields=${JSON.stringify(Object.fromEntries(Object.entries(vision.result).map(([k, v]) => [k, v.value])))}`)
-      const visionGarbled = vision.text.length === 0 || isGarbled(vision.text)
-      if (!visionGarbled) {
+      if (vision.text.length > 0 && !isGarbled(vision.text)) {
         extractedText = vision.text
         result = vision.result
         extractionStatus = 'completed'
-      } else {
-        console.log(`[extract] vision returned garbled or empty, falling back to text extraction`)
+      } else if (vision.text.length > 0) {
+        // Vision ran but produced garbled output — quality failure
+        console.log(`[extract] vision returned garbled text, falling back to text extraction`)
         extractedText = null
         result = await extractMetadataFromText(rawText)
         extractionStatus = 'manual_only'
+      } else {
+        // Vision produced no text — canvas or API technical failure
+        console.log(`[extract] vision returned empty, falling back to text extraction`)
+        extractedText = null
+        result = await extractMetadataFromText(rawText)
+        extractionStatus = 'failed'
       }
     } else {
       result = await extractMetadataFromText(rawText)
