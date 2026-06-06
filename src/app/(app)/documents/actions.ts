@@ -3,10 +3,10 @@
 import { auth } from '@/auth'
 import type { LocalDocument } from '@/lib/idb'
 import { chunkText } from '@/lib/chunk-text'
-import { extractMetadataFromText, extractFromPDFVision, type ExtractionResult } from '@/lib/extract-metadata'
+import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
 import { generateEmbedding } from '@/lib/generate-embeddings'
 import { generateSummary } from '@/lib/generate-summary'
-import { extractTextFromR2, isGarbled, getBufferFromR2 } from '@/lib/pdf'
+import { extractTextFromR2, isGarbled, getBufferFromR2, extractTextViaOCR } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import type { MetadataFormValues } from '@/components/documents/metadata-form'
@@ -82,25 +82,18 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
   if (garbled) {
     const buffer = await getBufferFromR2(document.r2Key)
     if (buffer) {
-      console.log(`[extract] calling vision fallback`)
-      const vision = await extractFromPDFVision(buffer)
-      console.log(`[extract] vision text len=${vision.text.length} fields=${JSON.stringify(Object.fromEntries(Object.entries(vision.result).map(([k, v]) => [k, v.value])))}`)
-      if (vision.text.length > 0 && !isGarbled(vision.text)) {
-        extractedText = vision.text
-        result = vision.result
+      console.log(`[extract] primary text garbled — attempting local OCR fallback`)
+      const ocrText = await extractTextViaOCR(buffer)
+      console.log(`[extract] OCR text len=${ocrText.length}`)
+      if (ocrText.length > 0 && !isGarbled(ocrText)) {
+        extractedText = ocrText
+        result = await extractMetadataFromText(ocrText)
         extractionStatus = 'completed'
-      } else if (vision.text.length > 0) {
-        // Vision ran but produced garbled output — quality failure
-        console.log(`[extract] vision returned garbled text, falling back to text extraction`)
+      } else {
+        console.log(`[extract] OCR text also garbled or empty — manual_only`)
         extractedText = null
         result = await extractMetadataFromText(rawText)
         extractionStatus = 'manual_only'
-      } else {
-        // Vision produced no text — canvas or API technical failure
-        console.log(`[extract] vision returned empty, falling back to text extraction`)
-        extractedText = null
-        result = await extractMetadataFromText(rawText)
-        extractionStatus = 'failed'
       }
     } else {
       result = await extractMetadataFromText(rawText)

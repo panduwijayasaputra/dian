@@ -1,10 +1,18 @@
 import 'server-only'
 
+import { execFile } from 'child_process'
+import { mkdir, readdir, rm, writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { promisify } from 'util'
 import { GetObjectCommand } from '@aws-sdk/client-s3'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>
 import type { Readable } from 'stream'
 import { r2Client } from './r2'
+import { randomUUID } from 'crypto'
+
+const execFileAsync = promisify(execFile)
 
 export function isGarbled(text: string): boolean {
   if (!text || text.length < 50) return true
@@ -63,58 +71,46 @@ export async function getBufferFromR2(r2Key: string): Promise<Buffer | null> {
   }
 }
 
-export async function renderPDFPagesToImages(buffer: Buffer, maxPages = 4): Promise<string[]> {
+// Renders PDF pages to images via pdftoppm and runs tesseract OCR.
+// Used as a fallback when primary text extraction is garbled.
+// Requires: poppler-utils (pdftoppm) and tesseract-ocr with ind+eng language packs.
+// On Ubuntu: apt-get install poppler-utils tesseract-ocr tesseract-ocr-ind
+// On macOS:  brew install poppler tesseract tesseract-lang
+export async function extractTextViaOCR(buffer: Buffer, maxPages = 4): Promise<string> {
+  const workDir = join(tmpdir(), `dian-ocr-${randomUUID()}`)
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs') as any
-    // pdfjs v6 removed pdf.worker.mjs from legacy/build; reference the standard build worker.
-    // process.cwd() reliably returns the project root in Next.js server actions.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${process.cwd()}/node_modules/pdfjs-dist/build/pdf.worker.mjs`
-    const { createCanvas } = await import('canvas')
+    await mkdir(workDir, { recursive: true })
 
-    // pdfjs creates internal canvases for inline image rendering. Without a NodeCanvasFactory,
-    // it falls back to DOM APIs (document.createElement / OffscreenCanvas) that don't exist in
-    // Node.js, producing objects that node-canvas's ctx.drawImage() rejects.
-    type CanvasAndContext = { canvas: ReturnType<typeof createCanvas>; context: ReturnType<ReturnType<typeof createCanvas>['getContext']> }
-    const canvasFactory = {
-      create(width: number, height: number): CanvasAndContext {
-        const canvas = createCanvas(width, height)
-        return { canvas, context: canvas.getContext('2d') }
-      },
-      reset(cc: CanvasAndContext, width: number, height: number) {
-        cc.canvas.width = width
-        cc.canvas.height = height
-      },
-      destroy(cc: CanvasAndContext) {
-        cc.canvas.width = 0
-        cc.canvas.height = 0
-      },
+    const pdfPath = join(workDir, 'input.pdf')
+    await writeFile(pdfPath, buffer)
+
+    // Render up to maxPages pages as PNG images at 150 DPI (sufficient for OCR accuracy)
+    const imagePrefix = join(workDir, 'page')
+    await execFileAsync('pdftoppm', ['-r', '150', '-png', '-l', String(maxPages), pdfPath, imagePrefix])
+
+    const files = await readdir(workDir)
+    const pageFiles = files.filter((f) => f.startsWith('page') && f.endsWith('.png')).sort()
+    if (pageFiles.length === 0) return ''
+
+    const texts: string[] = []
+    for (const pageFile of pageFiles) {
+      try {
+        const { stdout } = await execFileAsync('tesseract', [
+          join(workDir, pageFile),
+          'stdout',
+          '-l', 'ind+eng',
+        ])
+        if (stdout.trim()) texts.push(stdout.trim())
+      } catch {
+        // Skip pages where OCR fails; continue with remaining pages
+      }
     }
 
-    const data = new Uint8Array(buffer)
-    const pdf = await pdfjsLib.getDocument({ data, verbosity: 0, canvasFactory }).promise
-    const numPages = Math.min(pdf.numPages, maxPages)
-    const images: string[] = []
-
-    for (let i = 1; i <= numPages; i++) {
-      const page = await pdf.getPage(i)
-      const viewport = page.getViewport({ scale: 2.0 })
-      const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height))
-      const canvasContext = canvas.getContext('2d')
-
-      await page.render({
-        canvasContext: canvasContext as unknown as CanvasRenderingContext2D,
-        viewport,
-      }).promise
-
-      images.push(canvas.toBuffer('image/png').toString('base64'))
-      page.cleanup()
-    }
-
-    await pdf.cleanup()
-    return images
+    return texts.join('\n\n')
   } catch (err) {
-    console.error('[pdf] renderPDFPagesToImages failed:', err)
-    return []
+    console.error('[ocr] extractTextViaOCR failed:', err)
+    return ''
+  } finally {
+    await rm(workDir, { recursive: true, force: true }).catch(() => {})
   }
 }

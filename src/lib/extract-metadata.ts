@@ -2,7 +2,6 @@ import 'server-only'
 
 import OpenAI from 'openai'
 import { z } from 'zod'
-import { renderPDFPagesToImages } from './pdf'
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low'
 
@@ -81,78 +80,6 @@ const FALLBACK: ExtractionResult = {
   security: { value: null, confidence: 'low' },
 }
 
-const VISION_PROMPT = `You are processing an Indonesian government document (surat dinas).
-Return a JSON object with exactly two keys:
-1. "text": the full readable text content of the document, preserving structure. Skip garbled/unreadable sections.
-2. "metadata": an object with these eight keys, each having "value" and "confidence" ("high"/"medium"/"low"):
-   - documentNumber: the surat number (nomor surat), or null
-   - documentDate: date in YYYY-MM-DD format, or null
-   - sender: the sending office/person, or null
-   - receiver: the addressee (look for "Kepada Yth.", "Kepada:"), or null
-   - subject: the subject line (look for "Perihal:", "Hal:"), or null
-   - documentType: one of INCOMING_LETTER, OUTGOING_LETTER, DISPOSITION, MEMO, REPORT, DECREE, OTHER, or null
-   - urgency: one of BIASA, SEGERA, SANGAT_SEGERA, or null (look for "Sifat:")
-   - security: one of BIASA, TERBATAS, RAHASIA, SANGAT_RAHASIA, or null (look for "Klasifikasi:")
-Use "high" confidence when clearly stated, "medium" when inferred, "low" when guessing.`
-
-export async function extractFromPDFVision(buffer: Buffer): Promise<{
-  text: string
-  result: ExtractionResult
-}> {
-  try {
-    const images = await renderPDFPagesToImages(buffer)
-    if (images.length === 0) {
-      console.error('[vision] no pages rendered from PDF')
-      return { text: '', result: FALLBACK }
-    }
-
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o',
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...images.map((img) => ({
-              type: 'image_url' as const,
-              image_url: {
-                url: `data:image/png;base64,${img}`,
-                detail: 'high' as const,
-              },
-            })),
-            { type: 'text' as const, text: VISION_PROMPT },
-          ],
-        },
-      ],
-    })
-
-    const raw = response.choices[0]?.message?.content
-    if (!raw) {
-      console.error('[vision] empty response from Chat Completions')
-      return { text: '', result: FALLBACK }
-    }
-
-    const parsed = JSON.parse(raw) as {
-      text?: string
-      metadata?: Record<string, { value: unknown; confidence: string }>
-    }
-
-    const metadataParsed = extractionSchema.safeParse(parsed.metadata ?? {})
-    if (!metadataParsed.success) {
-      console.error('[vision] schema parse failed:', metadataParsed.error.message)
-    }
-
-    return {
-      text: typeof parsed.text === 'string' ? parsed.text : '',
-      result: metadataParsed.success ? (metadataParsed.data as ExtractionResult) : FALLBACK,
-    }
-  } catch (err) {
-    console.error('[vision] extractFromPDFVision failed:', err)
-    return { text: '', result: FALLBACK }
-  }
-}
 
 export async function extractMetadataFromText(text: string): Promise<ExtractionResult> {
   if (!text.trim()) return FALLBACK
