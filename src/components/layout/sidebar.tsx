@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Building2,
   Users,
+  ClipboardList,
   Menu,
   LogOut,
 } from 'lucide-react'
@@ -30,6 +31,7 @@ const menuUtama = [
 const menuAdmin = [
   { href: '/divisi', label: 'Divisi', icon: Building2 },
   { href: '/pengguna', label: 'Pengguna', icon: Users },
+  { href: '/log-aktivitas', label: 'Log Aktivitas', icon: ClipboardList },
 ]
 
 interface SidebarProps {
