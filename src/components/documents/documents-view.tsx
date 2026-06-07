@@ -140,7 +140,6 @@ export function DocumentsView({
   // Offline state
   const [idbDocs, setIdbDocs] = useState<DocumentModel[]>([])
   const [offlineSearch, setOfflineSearch] = useState('')
-  const [offlineType, setOfflineType] = useState('')
   const [offlineStatus, setOfflineStatus] = useState('')
   const [offlinePage, setOfflinePage] = useState(1)
   const [offlinePageSize, setOfflinePageSize] = useState(20)
@@ -157,7 +156,12 @@ export function DocumentsView({
 
   useEffect(() => {
     if (isOnline) {
+      setOfflineSearch('')
+      setOfflineStatus('')
+      setOfflinePage(1)
       startTransition(() => router.refresh())
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline])
@@ -186,13 +190,19 @@ export function DocumentsView({
     [page, pageSize, q, typeFilter, statusFilter, divisionFilter, router],
   )
 
-  function onSearchChange(value: string) {
+  const onSearchChange = useCallback((value: string) => {
     setSearchInput(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       pushParams({ q: value, page: 1 })
     }, 300)
-  }
+  }, [pushParams])
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   const offlineFiltered = useMemo(() => {
     const qLower = offlineSearch.toLowerCase().trim()
@@ -204,11 +214,14 @@ export function DocumentsView({
           doc.sender?.toLowerCase().includes(qLower)
         if (!matches) return false
       }
-      if (offlineType && doc.documentType !== offlineType) return false
       if (offlineStatus && doc.status !== offlineStatus) return false
       return true
     })
-  }, [idbDocs, offlineSearch, offlineType, offlineStatus])
+  }, [idbDocs, offlineSearch, offlineStatus])
+
+  useEffect(() => {
+    setOfflinePage(1)
+  }, [offlineSearch, offlineStatus])
 
   const offlineTotalPages = Math.max(1, Math.ceil(offlineFiltered.length / offlinePageSize))
   const offlinePageDocs = offlineFiltered.slice(
@@ -223,7 +236,7 @@ export function DocumentsView({
   const activeTotalPages = isOnline ? Math.max(1, Math.ceil(total / pageSize)) : offlineTotalPages
   const hasActiveFilters = isOnline
     ? !!(q || typeFilter || statusFilter || divisionFilter)
-    : !!(offlineSearch || offlineType || offlineStatus)
+    : !!(offlineSearch || offlineStatus)
 
   const allDocsForModal = isOnline ? documents : idbDocs
 
@@ -273,26 +286,24 @@ export function DocumentsView({
           />
         </div>
 
-        <Select
-          value={isOnline ? typeFilter : offlineType}
-          onValueChange={(v) =>
-            isOnline ? pushParams({ type: v ?? '', page: 1 }) : setOfflineType(v ?? '')
-          }
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Semua Jenis">
-              {(isOnline ? typeFilter : offlineType)
-                ? DOC_TYPE_LABELS[isOnline ? typeFilter : offlineType]
-                : undefined}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Semua Jenis</SelectItem>
-            {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isOnline && (
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => pushParams({ type: v ?? '', page: 1 })}
+          >
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Semua Jenis">
+                {typeFilter ? DOC_TYPE_LABELS[typeFilter] : undefined}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Semua Jenis</SelectItem>
+              {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <Select
           value={isOnline ? statusFilter : offlineStatus}
@@ -343,7 +354,6 @@ export function DocumentsView({
                 router.push('/documents')
               } else {
                 setOfflineSearch('')
-                setOfflineType('')
                 setOfflineStatus('')
                 setOfflinePage(1)
               }
