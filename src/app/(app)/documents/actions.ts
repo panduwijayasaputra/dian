@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import type { MetadataFormValues } from '@/components/documents/metadata-form'
 import { getPresignedUrl, r2Client } from '@/lib/r2'
+import { logActivity } from '@/lib/activity-log'
 
 type ViewUrlResult =
   | { success: true; url: string }
@@ -44,6 +45,14 @@ export async function getDocumentViewUrl(documentId: string): Promise<ViewUrlRes
   }
 
   const url = await getPresignedUrl(document.r2Key)
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_DOWNLOAD',
+    resourceId: documentId,
+    information: `Unduh: ${document.originalName ?? documentId}`,
+  })
+
   return { success: true, url }
 }
 
@@ -176,13 +185,17 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
 
 type SimpleResult = { success: true } | { success: false; error: string }
 
+export type DuplicateInfo = { id: string; documentNumber: string; sender: string | null; documentDate: string | null }
+
 type SaveResult =
   | { success: true; document: Awaited<ReturnType<typeof prisma.document.findUniqueOrThrow>> }
   | { success: false; error: string }
+  | { success: false; duplicate: DuplicateInfo }
 
 export async function saveDocumentMetadata(
   documentId: string,
   values: MetadataFormValues,
+  force = false,
 ): Promise<SaveResult> {
   const session = await auth()
   if (!session?.user?.id) return { success: false, error: 'Not authenticated.' }
@@ -192,8 +205,27 @@ export async function saveDocumentMetadata(
     return { success: false, error: 'Document not found.' }
   }
 
+  if (!force && values.documentNumber) {
+    const existing = await prisma.document.findFirst({
+      where: { documentNumber: values.documentNumber, id: { not: documentId }, status: { not: 'LOCAL' } },
+      select: { id: true, documentNumber: true, sender: true, documentDate: true },
+    })
+    if (existing) {
+      return {
+        success: false,
+        duplicate: {
+          id: existing.id,
+          documentNumber: existing.documentNumber!,
+          sender: existing.sender,
+          documentDate: existing.documentDate ? existing.documentDate.toISOString().split('T')[0] : null,
+        },
+      }
+    }
+  }
+
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
-  const deadline = values.deadline ? new Date(values.deadline) : null
+  const deadlineStart = values.deadlineStart ? new Date(values.deadlineStart) : null
+  const deadlineEnd = values.deadlineEnd ? new Date(values.deadlineEnd) : null
 
   const [updated] = await prisma.$transaction([
     prisma.document.update({
@@ -207,7 +239,9 @@ export async function saveDocumentMetadata(
         documentType: (values.documentType as never) || null,
         urgency: (values.urgency as never) || null,
         security: (values.security as never) || null,
-        deadline,
+        deadlineStart,
+        deadlineEnd,
+        memo: values.memo || null,
         status: 'READY',
       },
     }),
@@ -220,6 +254,13 @@ export async function saveDocumentMetadata(
       skipDuplicates: true,
     })
   }
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_METADATA_SAVE',
+    resourceId: documentId,
+    information: `Simpan metadata: ${values.subject ?? documentId}`,
+  })
 
   return { success: true, document: updated }
 }
@@ -244,6 +285,14 @@ export async function deleteDocument(documentId: string): Promise<SimpleResult> 
   }
 
   await prisma.document.delete({ where: { id: documentId } })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_DELETE',
+    resourceId: documentId,
+    information: `Hapus dokumen: ${document.originalName ?? documentId}`,
+  })
+
   return { success: true }
 }
 
@@ -261,7 +310,8 @@ export async function updateDocumentMetadata(
   }
 
   const documentDate = values.documentDate ? new Date(values.documentDate) : null
-  const deadline = values.deadline ? new Date(values.deadline) : null
+  const deadlineStart = values.deadlineStart ? new Date(values.deadlineStart) : null
+  const deadlineEnd = values.deadlineEnd ? new Date(values.deadlineEnd) : null
 
   await prisma.$transaction([
     prisma.document.update({
@@ -275,7 +325,9 @@ export async function updateDocumentMetadata(
         documentType: (values.documentType as never) || null,
         urgency: (values.urgency as never) || null,
         security: (values.security as never) || null,
-        deadline,
+        deadlineStart,
+        deadlineEnd,
+        memo: values.memo || null,
       },
     }),
     prisma.documentDivision.deleteMany({ where: { documentId } }),
@@ -287,6 +339,13 @@ export async function updateDocumentMetadata(
       skipDuplicates: true,
     })
   }
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_METADATA_SAVE',
+    resourceId: documentId,
+    information: `Update metadata: ${values.subject ?? documentId}`,
+  })
 
   return { success: true }
 }
@@ -324,7 +383,9 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
       subject: true,
       urgency: true,
       security: true,
-      deadline: true,
+      deadlineStart: true,
+      deadlineEnd: true,
+      memo: true,
       summary: true,
       extractedText: true,
       extractionStatus: true,
@@ -346,7 +407,9 @@ export async function getDocumentsForSync(): Promise<SyncResult> {
     subject: doc.subject,
     urgency: doc.urgency,
     security: doc.security,
-    deadline: doc.deadline ? doc.deadline.toISOString().split('T')[0] : null,
+    deadline_start: doc.deadlineStart ? doc.deadlineStart.toISOString().split('T')[0] : null,
+    deadline_end: doc.deadlineEnd ? doc.deadlineEnd.toISOString().split('T')[0] : null,
+    memo: doc.memo,
     summary: doc.summary,
     extracted_text: doc.extractedText,
     extraction_status: doc.extractionStatus,

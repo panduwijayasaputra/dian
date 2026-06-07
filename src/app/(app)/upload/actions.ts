@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { uploadToR2 } from '@/lib/r2'
+import { logActivity } from '@/lib/activity-log'
 
 const MAX_SIZE_BYTES = 20 * 1024 * 1024
 
@@ -42,6 +43,13 @@ export async function uploadDocument(formData: FormData): Promise<UploadResult> 
       originalName: file.name,
       fileSizeBytes: file.size,
     },
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_UPLOAD',
+    resourceId: document.id,
+    information: `Unggah: ${file.name} (${(file.size / 1024).toFixed(0)} KB)`,
   })
 
   return { success: true, documentId: document.id }

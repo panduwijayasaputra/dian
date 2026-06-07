@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { generateEmbedding } from '@/lib/generate-embeddings'
 import { parseNlQuery } from '@/lib/parse-nl-query'
 import { prisma } from '@/lib/prisma'
+import { logActivity } from '@/lib/activity-log'
 
 export type SearchFilters = {
   documentNumber?: string
@@ -253,6 +254,12 @@ export async function searchDocuments(
   if (!trimmedQuery && !hasActiveFilters(filters)) {
     return { success: true, results: [], isNLInterpreted: false }
   }
+
+  void logActivity({
+    userId: session.user.id,
+    action: 'DOCUMENT_SEARCH',
+    information: trimmedQuery ? `Query: "${trimmedQuery}"` : 'Filter only',
+  }).catch(() => {})
 
   // Metadata-only path — no query text, only filters active.
   if (!trimmedQuery) {
