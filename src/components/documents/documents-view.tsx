@@ -134,6 +134,7 @@ export function DocumentsView({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearchInput(q)
   }, [q])
 
@@ -156,6 +157,7 @@ export function DocumentsView({
 
   useEffect(() => {
     if (isOnline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOfflineSearch('')
       setOfflineStatus('')
       setOfflinePage(1)
@@ -220,6 +222,7 @@ export function DocumentsView({
   }, [idbDocs, offlineSearch, offlineStatus])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOfflinePage(1)
   }, [offlineSearch, offlineStatus])
 
