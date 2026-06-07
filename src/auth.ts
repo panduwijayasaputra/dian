@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logActivity } from '@/lib/activity-log'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -12,13 +13,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null
+
         const user = await prisma.user.findUnique({
           where: { username: credentials.username as string },
         })
-        if (!user) return null
+
+        if (!user) {
+          await logActivity({
+            action: 'AUTH_LOGIN_FAILED',
+            information: `Username tidak ditemukan: ${credentials.username}`,
+          })
+          return null
+        }
+
         const valid = await bcrypt.compare(credentials.password as string, user.passwordHash)
-        if (!valid) return null
-        if (!user.isActive) return null
+        if (!valid) {
+          await logActivity({
+            userId: user.id,
+            action: 'AUTH_LOGIN_FAILED',
+            resourceId: user.id,
+            information: `Password salah untuk: ${user.username}`,
+          })
+          return null
+        }
+
+        if (!user.isActive) {
+          await logActivity({
+            userId: user.id,
+            action: 'AUTH_LOGIN_FAILED',
+            resourceId: user.id,
+            information: `Akun tidak aktif: ${user.username}`,
+          })
+          return null
+        }
+
+        await logActivity({
+          userId: user.id,
+          action: 'AUTH_LOGIN',
+          resourceId: user.id,
+          information: `Login berhasil: ${user.name}`,
+        })
+
         return {
           id: user.id,
           name: user.name,
