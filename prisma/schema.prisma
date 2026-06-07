@@ -32,6 +32,8 @@ enum DocumentType {
   REPORT
   DECREE
   OTHER
+  SPT
+  NOTA_DINAS
 }
 
 enum EmbeddingStatus {
@@ -73,6 +75,7 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   documents    Document[]
+  activityLogs ActivityLog[]
 }
 
 model Division {
@@ -98,12 +101,14 @@ model Document {
   subject        String?
   urgency        UrgencyLevel?
   security       SecurityLevel?
-  deadline       DateTime?
+  deadlineStart  DateTime?
+  deadlineEnd    DateTime?
   fileSizeBytes    Int?
   originalName     String?
   extractedText    String?
   extractionResult Json?
   summary          String?
+  memo             String?
   embeddingStatus  EmbeddingStatus  @default(PENDING)
   extractionStatus ExtractionStatus @default(pending)
   chunks           DocumentChunk[]
@@ -130,4 +135,18 @@ model DocumentChunk {
   chunkIndex Int
   embedding  Unsupported("vector(1536)")?
   createdAt  DateTime                  @default(now())
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  resourceId  String?
+  information String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
