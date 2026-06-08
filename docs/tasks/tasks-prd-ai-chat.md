@@ -29,7 +29,7 @@ Based on: `docs/prd/prd-ai-chat.md`
 
 ## Tasks
 
-- [ ] 1.0 Database: Add chat schema and migrate
+- [x] 1.0 Database: Add chat schema and migrate
   - [x] 1.1 Add `ChatSession` model to `prisma/schema.prisma`
     - Open `prisma/schema.prisma`.
     - Add the following model:
@@ -72,12 +72,12 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Run `pnpm prisma generate` to regenerate the client.
 
 - [ ] 2.0 API: Session management endpoints
-  - [ ] 2.1 Create `GET /api/chat/sessions` — list sessions
+  - [x] 2.1 Create `GET /api/chat/sessions` — list sessions
     - Create `src/app/api/chat/sessions/route.ts`.
     - Use `auth()` from `@/auth` to get the current user. Return `401` if not authenticated.
     - Query `prisma.chatSession.findMany` where `userId === session.user.id`, ordered by `updatedAt desc`, limit 20.
     - Return `{ sessions: [...] }` as JSON.
-  - [ ] 2.2 Create `POST /api/chat/sessions` — create session
+  - [x] 2.2 Create `POST /api/chat/sessions` — create session
     - In the same `route.ts`, export a `POST` handler.
     - Use `auth()` to authenticate. Return `401` if not authenticated.
     - Read `title` from the request body (string, max 60 chars — the caller passes the user's first message truncated).
