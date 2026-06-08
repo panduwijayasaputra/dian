@@ -133,8 +133,8 @@ Based on: `docs/prd/prd-ai-chat.md`
       - Update `chatSession.updatedAt`.
     - Note: saving to DB after streaming is done via a fire-and-forget `Promise` that doesn't block the stream.
 
-- [ ] 4.0 UI: Two-panel chat page at `/chat`
-  - [ ] 4.1 Create the `/chat` page shell
+- [x] 4.0 UI: Two-panel chat page at `/chat`
+  - [x] 4.1 Create the `/chat` page shell
     - Create `src/app/(app)/chat/page.tsx`.
     - Mark it `'use client'`.
     - Import and compose `SessionList` (left panel) and `ChatThread` (right panel) side by side.
@@ -142,7 +142,7 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Layout: `flex h-[calc(100vh-8rem)] gap-0 overflow-hidden rounded-xl border border-border bg-white`.
     - Left panel: fixed width `w-64 shrink-0 border-r`.
     - Right panel: `flex-1 min-w-0`.
-  - [ ] 4.2 Create `SessionList` component
+  - [x] 4.2 Create `SessionList` component
     - Create `src/components/chat/session-list.tsx`, mark `'use client'`.
     - Props: `activeSessionId`, `onSelect(id: string)`, `onNewChat()`.
     - On mount, fetch `GET /api/chat/sessions` and store sessions in local state.
@@ -150,7 +150,7 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Render the list of sessions below: each item shows the `title` and relative time (`updatedAt`).
     - Active session gets a highlighted background (`bg-accent`).
     - Expose a `refresh()` method via `useImperativeHandle` so the parent can trigger a refresh after a new session is created.
-  - [ ] 4.3 Create `ChatThread` component
+  - [x] 4.3 Create `ChatThread` component
     - Create `src/components/chat/chat-thread.tsx`, mark `'use client'`.
     - Props: `sessionId: string | null`, `onSessionCreated(id: string, title: string)`.
     - When `sessionId` is null, render an empty state: centered Bot icon + "Mulai percakapan baru" text.
@@ -160,21 +160,21 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Render `ChatInput` pinned at the bottom.
     - On send: if `sessionId` is null, call `POST /api/chat/sessions` to create one first (title = first 60 chars of message), then call `onSessionCreated`. Then stream the message.
     - Streaming: call `POST /api/chat/[sessionId]/message` with `fetch` and read the response body as a `ReadableStream`. Parse SSE lines (`data: <token>`) and append tokens to a temporary streaming message in state. When the stream ends, replace the temporary message with the saved one from DB (or just keep the streamed content).
-  - [ ] 4.4 Create `MessageBubble` component
+  - [x] 4.4 Create `MessageBubble` component
     - Create `src/components/chat/message-bubble.tsx`.
     - Props: `role: "user" | "assistant"`, `content: string`, `sources?: Source[]`, `isStreaming?: boolean`.
     - User bubble: right-aligned, primary bg, white text, `rounded-2xl rounded-tr-sm`.
     - Assistant bubble: left-aligned, `bg-slate-100`, slate text, `rounded-2xl rounded-tl-sm`. Show a Bot avatar icon to the left.
     - If `isStreaming` is true, show an animated dots indicator at the end of the content.
     - If `sources` is non-empty, render a list of `SourceCard` components below the bubble.
-  - [ ] 4.5 Create `SourceCard` component
+  - [x] 4.5 Create `SourceCard` component
     - Create `src/components/chat/source-card.tsx`.
     - Props: `documentId: string`, `documentNumber: string | null`, `subject: string | null`, `excerpt: string`.
     - Render as a small card: `bg-white border rounded-lg p-3 text-xs`.
     - Show document number and subject as the card title.
     - Show the excerpt (truncated to ~120 chars) as body text.
     - Wrap the card in a `Link` pointing to `/documents?highlight=<documentId>` (or just `/documents` for now).
-  - [ ] 4.6 Create `ChatInput` component
+  - [x] 4.6 Create `ChatInput` component
     - Create `src/components/chat/chat-input.tsx`, mark `'use client'`.
     - Props: `onSend(text: string)`, `disabled?: boolean`, `isOnline: boolean`.
     - Use `useOnlineStatus` hook (or `navigator.onLine` + `online`/`offline` event listeners) to detect connectivity.
