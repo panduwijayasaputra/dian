@@ -109,7 +109,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
     - Indonesian label map for `DocumentType` enum:
       - `INCOMING_LETTER` → "Surat Masuk", `OUTGOING_LETTER` → "Surat Keluar", `DISPOSITION` → "Disposisi", `MEMO` → "Memo", `REPORT` → "Laporan", `DECREE` → "SK", `NOTA_DINAS` → "Nota Dinas", `SPT` → "SPT", `OTHER` → "Lainnya", `null` → "Tidak Diketahui"
 
-- [ ] 5.0 Wire everything together in `page.tsx` and verify role-based rendering
+- [x] 5.0 Wire everything together in `page.tsx` and verify role-based rendering
   - [x] 5.1 Update `page.tsx` to fetch real data
     - Add `import { auth } from '@/auth'` and call `const session = await auth()`
     - Extract `role`, `id` (userId), and `divisionId` from `session.user`
@@ -128,7 +128,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
         1. 3-column stat grid: total division docs, month division docs, personal search count
         2. `<TrendChart data={stats.trendData} />`
         3. `<RecentDocumentsTable documents={stats.recentDocs} />`
-  - [ ] 5.4 Manual verification
+  - [x] 5.4 Manual verification
     - Start dev server (`pnpm dev`) and log in as admin — confirm all 4 stat cards show real numbers, trend chart renders, type breakdown renders, recent docs table is populated and rows are clickable
     - Log in as a regular user with a division — confirm 3 stat cards show division-scoped data, trend chart and table are division-filtered
     - Log in as a regular user with no division — confirm "Anda belum terdaftar di divisi manapun." message appears
