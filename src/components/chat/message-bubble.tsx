@@ -13,9 +13,10 @@ interface MessageBubbleProps {
   content: string
   sources?: Source[]
   isStreaming?: boolean
+  onViewDocument?: (documentId: string) => void
 }
 
-export function MessageBubble({ role, content, sources = [], isStreaming }: MessageBubbleProps) {
+export function MessageBubble({ role, content, sources = [], isStreaming, onViewDocument }: MessageBubbleProps) {
   if (role === 'user') {
     return (
       <div className="flex justify-end">
@@ -46,7 +47,7 @@ export function MessageBubble({ role, content, sources = [], isStreaming }: Mess
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-slate-400">Sumber dokumen</span>
             {sources.map((src) => (
-              <SourceCard key={src.documentId} {...src} />
+              <SourceCard key={src.documentId} {...src} onView={onViewDocument ?? (() => {})} />
             ))}
           </div>
         )}

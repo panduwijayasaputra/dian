@@ -5,6 +5,7 @@ import { Bot } from 'lucide-react'
 import { getChatMessages, type ChatMessageData } from '@/app/(app)/chat/actions'
 import { MessageBubble, type Source } from '@/components/chat/message-bubble'
 import { ChatInput } from '@/components/chat/chat-input'
+import { DocumentViewerModal } from '@/components/documents/document-viewer-modal'
 
 interface ChatThreadProps {
   sessionId: string | null
@@ -20,6 +21,7 @@ export function ChatThread({ sessionId, onSessionCreated }: ChatThreadProps) {
   const [messages, setMessages] = useState<ChatMessageData[]>([])
   const [streaming, setStreaming] = useState<StreamingMessage | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [viewingDocumentId, setViewingDocumentId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const justCreatedRef = useRef(false)
 
@@ -131,6 +133,7 @@ export function ChatThread({ sessionId, onSessionCreated }: ChatThreadProps) {
               role={msg.role as 'user' | 'assistant'}
               content={msg.content}
               sources={Array.isArray(msg.sources) ? (msg.sources as Source[]) : []}
+              onViewDocument={setViewingDocumentId}
             />
           ))}
           {streaming && (
@@ -147,6 +150,12 @@ export function ChatThread({ sessionId, onSessionCreated }: ChatThreadProps) {
       <div className="border-t border-border">
         <ChatInput onSend={handleSend} disabled={isStreaming} />
       </div>
+
+      <DocumentViewerModal
+        documentId={viewingDocumentId}
+        isOpen={viewingDocumentId !== null}
+        onClose={() => setViewingDocumentId(null)}
+      />
     </div>
   )
 }
