@@ -76,6 +76,7 @@ model User {
   updatedAt    DateTime   @updatedAt
   documents    Document[]
   activityLogs ActivityLog[]
+  chatSessions ChatSession[]
 }
 
 model Division {
@@ -135,6 +136,32 @@ model DocumentChunk {
   chunkIndex Int
   embedding  Unsupported("vector(1536)")?
   createdAt  DateTime                  @default(now())
+}
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String        @map("user_id")
+  user      User          @relation(fields: [userId], references: [id])
+  title     String
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  messages  ChatMessage[]
+
+  @@index([userId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String      @map("session_id")
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  sources   Json?
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@map("chat_messages")
 }
 
 model ActivityLog {
