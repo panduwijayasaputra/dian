@@ -58,8 +58,8 @@ export async function POST(
         SELECT dc.id, dc.content, dc."chunkIndex",
                d.id AS "documentId", d."documentNumber", d.subject,
                dc.embedding <=> ${vectorStr}::vector AS distance
-        FROM document_chunks dc
-        JOIN documents d ON d.id = dc."documentId"
+        FROM "DocumentChunk" dc
+        JOIN "Document" d ON d.id = dc."documentId"
         WHERE dc.embedding IS NOT NULL
         ORDER BY dc.embedding <=> ${vectorStr}::vector
         LIMIT 5
