@@ -34,11 +34,11 @@ Based on: `docs/prd/prd-dashboard-insights.md`
     - Create `src/components/dashboard/recent-documents-table.tsx` with a placeholder export
 
 - [ ] 2.0 Build the `getDashboardStats()` server function with all Prisma queries
-  - [ ] 2.1 Create `src/lib/dashboard.ts` and define return types
+  - [x] 2.1 Create `src/lib/dashboard.ts` and define return types
     - Create the file with `import 'server-only'` at the top
     - Define TypeScript types: `AdminStats`, `UserStats`, `TrendDataPoint` (`{ date: string; count: number }`), `TypeBreakdownItem` (`{ type: string; label: string; count: number }`), `RecentDocument` (`{ id, documentNumber, subject, documentDate, divisions[] }`)
     - Export a union type `DashboardStats = AdminDashboardStats | UserDashboardStats` with a `role` discriminant field
-  - [ ] 2.2 Implement admin queries
+  - [x] 2.2 Implement admin queries
     - Use `Promise.all` to run all queries in parallel:
       - `totalDocs`: `prisma.document.count({ where: { status: 'READY' } })`
       - `docsThisMonth`: count where `status = READY` and `createdAt >= startOfCurrentMonth`
@@ -50,7 +50,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
       - `trendData`: raw query grouping `DATE(createdAt)` for `READY` docs in the last 30 days — fill missing dates with `0` in JS
       - `typeBreakdown`: `prisma.document.groupBy({ by: ['documentType'], where: { status: 'READY' }, _count: true })` — map enum to Indonesian label, group nulls as "Tidak Diketahui"
       - `recentDocs`: `prisma.document.findMany({ where: { status: 'READY' }, orderBy: { createdAt: 'desc' }, take: 5, include: { divisions: { include: { division: true } } } })`
-  - [ ] 2.3 Implement user queries (division-scoped)
+  - [x] 2.3 Implement user queries (division-scoped)
     - Accept `divisionId: string | null` as parameter
     - If `divisionId` is null, return zeroed stats immediately with `noDivision: true` flag
     - Use `Promise.all` for:
@@ -61,7 +61,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
       - `mySearchLastMonth`: same for last month
       - `trendData`: same as admin but filtered by `divisions.some({ divisionId })`
       - `recentDocs`: 5 most recent `READY` docs filtered by `divisions.some({ divisionId })`, include division names
-  - [ ] 2.4 Export a single `getDashboardStats(role, userId, divisionId)` function
+  - [x] 2.4 Export a single `getDashboardStats(role, userId, divisionId)` function
     - Branch on `role === 'ADMIN'` to call admin or user query sets
     - Return typed `DashboardStats` object
 
