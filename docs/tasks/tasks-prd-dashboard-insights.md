@@ -110,18 +110,18 @@ Based on: `docs/prd/prd-dashboard-insights.md`
       - `INCOMING_LETTER` → "Surat Masuk", `OUTGOING_LETTER` → "Surat Keluar", `DISPOSITION` → "Disposisi", `MEMO` → "Memo", `REPORT` → "Laporan", `DECREE` → "SK", `NOTA_DINAS` → "Nota Dinas", `SPT` → "SPT", `OTHER` → "Lainnya", `null` → "Tidak Diketahui"
 
 - [ ] 5.0 Wire everything together in `page.tsx` and verify role-based rendering
-  - [ ] 5.1 Update `page.tsx` to fetch real data
+  - [x] 5.1 Update `page.tsx` to fetch real data
     - Add `import { auth } from '@/auth'` and call `const session = await auth()`
     - Extract `role`, `id` (userId), and `divisionId` from `session.user`
     - Call `getDashboardStats(role, userId, divisionId)` and await the result
     - Remove all hardcoded `statCards` and `dokumenTerbaru` arrays
-  - [ ] 5.2 Render admin layout
+  - [x] 5.2 Render admin layout
     - When `stats.role === 'ADMIN'`, render:
       1. 4-column stat grid using `<StatCard>` for total docs, month docs, active divisions, active users
       2. `<TrendChart data={stats.trendData} />`
       3. `<TypeBreakdownChart data={stats.typeBreakdown} />`
       4. `<RecentDocumentsTable documents={stats.recentDocs} />`
-  - [ ] 5.3 Render user layout
+  - [x] 5.3 Render user layout
     - When `stats.role === 'USER'`, check `stats.noDivision`:
       - If true: show a single `Card` with the message "Anda belum terdaftar di divisi manapun." and no other sections
       - If false: render:
