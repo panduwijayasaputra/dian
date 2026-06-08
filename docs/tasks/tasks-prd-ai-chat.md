@@ -182,11 +182,11 @@ Based on: `docs/prd/prd-ai-chat.md`
     - When `disabled` (streaming in progress): disable the input and button.
     - Enter key submits (no shift+Enter), same as the existing `/asisten` page.
 
-- [ ] 5.0 Route: Remove `/asisten`, update navigation
-  - [ ] 5.1 Delete the `/asisten` route
+- [x] 5.0 Route: Remove `/asisten`, update navigation
+  - [x] 5.1 Delete the `/asisten` route
     - Delete the file `src/app/(app)/asisten/page.tsx`.
     - Delete the directory `src/app/(app)/asisten/`.
-  - [ ] 5.2 Update the sidebar navigation
+  - [x] 5.2 Update the sidebar navigation
     - Open `src/components/layout/sidebar.tsx`.
     - In `menuUtama`, change `href: '/asisten'` to `href: '/chat'` and `label: 'Asisten'` to `label: 'Chat'`.
     - No other changes needed — the icon (`MessageSquare`) stays the same.

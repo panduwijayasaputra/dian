@@ -25,7 +25,7 @@ import {
 const menuUtama = [
   { href: '/', label: 'Beranda', icon: LayoutDashboard },
   { href: '/documents', label: 'Dokumen', icon: FileText },
-  { href: '/asisten', label: 'Asisten', icon: MessageSquare },
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
 ]
 
 const menuAdmin = [
