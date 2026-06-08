@@ -11,10 +11,9 @@ import {
 } from '@/components/ui/table'
 import { format } from 'date-fns'
 import { id as localeId } from 'date-fns/locale'
+import { LogFilterForm } from './log-filter-form'
 
 const PAGE_SIZE = 50
-
-const CATEGORIES = ['AUTH', 'DOCUMENT', 'USER', 'DIVISION'] as const
 
 interface Props {
   searchParams: Promise<{
@@ -74,69 +73,13 @@ export default async function LogAktivitasPage({ searchParams }: Props) {
         <p className="mt-1 text-sm text-slate-500">{total} entri ditemukan</p>
       </div>
 
-      {/* Filters */}
-      <form method="GET" className="flex flex-wrap gap-3 items-end">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">Pengguna</label>
-          <select
-            name="userId"
-            defaultValue={params.userId ?? ''}
-            className="h-9 rounded-md border border-input bg-white px-3 text-sm"
-          >
-            <option value="">Semua Pengguna</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">Kategori</label>
-          <select
-            name="category"
-            defaultValue={params.category ?? ''}
-            className="h-9 rounded-md border border-input bg-white px-3 text-sm"
-          >
-            <option value="">Semua Kategori</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">Dari</label>
-          <input
-            type="date"
-            name="from"
-            defaultValue={params.from ?? ''}
-            className="h-9 rounded-md border border-input bg-white px-3 text-sm"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-slate-600">Sampai</label>
-          <input
-            type="date"
-            name="to"
-            defaultValue={params.to ?? ''}
-            className="h-9 rounded-md border border-input bg-white px-3 text-sm"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-white"
-        >
-          Filter
-        </button>
-        <a
-          href="/log-aktivitas"
-          className="h-9 rounded-md border px-4 text-sm font-medium flex items-center"
-        >
-          Reset
-        </a>
-      </form>
+      <LogFilterForm
+        users={users}
+        initialUserId={params.userId}
+        initialCategory={params.category}
+        initialFrom={params.from}
+        initialTo={params.to}
+      />
 
       {/* Table */}
       <div className="rounded-lg border bg-white overflow-hidden">

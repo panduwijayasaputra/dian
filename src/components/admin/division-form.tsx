@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { getHexColor, DEFAULT_DIVISION_COLOR } from '@/lib/division-colors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 interface DivisionFormProps {
-  defaultValues?: { name: string }
-  onSubmit: (name: string) => Promise<void>
+  defaultValues?: { name: string; color?: string }
+  onSubmit: (name: string, color: string) => Promise<void>
   onCancel?: () => void
   isSubmitting: boolean
   submitLabel: string
@@ -21,10 +22,11 @@ export function DivisionForm({
   submitLabel,
 }: DivisionFormProps) {
   const [name, setName] = useState(defaultValues?.name ?? '')
+  const [color, setColor] = useState(getHexColor(defaultValues?.color ?? DEFAULT_DIVISION_COLOR))
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await onSubmit(name)
+    await onSubmit(name, color)
   }
 
   return (
@@ -40,7 +42,23 @@ export function DivisionForm({
           required
         />
       </div>
-      <div className="flex gap-2">
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="division-color">Warna</Label>
+        <div className="flex items-center gap-3">
+          <input
+            id="division-color"
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            disabled={isSubmitting}
+            className="h-9 w-14 cursor-pointer rounded-lg border border-input bg-white p-1 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <span className="font-mono text-sm text-slate-500">{color}</span>
+        </div>
+      </div>
+
+      <div className="flex gap-2 pt-1">
         <Button type="submit" disabled={isSubmitting || !name.trim()}>
           {submitLabel}
         </Button>

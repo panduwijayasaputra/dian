@@ -10,7 +10,9 @@ export interface LocalDocument {
   subject: string | null
   urgency: string | null
   security: string | null
-  deadline: string | null  // ISO date string
+  deadline_start: string | null  // ISO date string
+  deadline_end: string | null    // ISO date string
+  memo: string | null
   summary: string | null
   extracted_text: string | null
   extraction_status: 'pending' | 'completed' | 'failed' | 'manual_only'

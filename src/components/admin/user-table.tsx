@@ -1,12 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Pencil, X } from 'lucide-react'
+import { useTransition } from 'react'
+import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { UserForm } from './user-form'
-import { toggleUserActive, updateUser } from '@/app/(admin)/admin/users/actions'
+import { toggleUserActive } from '@/app/(app)/pengguna/actions'
 
 type Division = { id: string; name: string }
 
@@ -24,33 +23,18 @@ interface UserTableProps {
   users: User[]
   divisions: Division[]
   onMutate: () => void
+  onEdit: (user: { id: string; name: string; username: string; role: 'ADMIN' | 'USER'; divisionId: string | null }) => void
 }
 
-export function UserTable({ users, divisions, onMutate }: UserTableProps) {
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export function UserTable({ users, divisions: _divisions, onMutate, onEdit }: UserTableProps) {
   const [isPending, startTransition] = useTransition()
 
-  async function handleUpdate(
-    id: string,
-    values: { name: string; username: string; password: string; role: 'ADMIN' | 'USER'; divisionId: string | null },
-  ) {
-    const result = await updateUser(id, values)
-    if (result.success) {
-      setEditingId(null)
-      startTransition(() => onMutate())
-    } else {
-      setError(result.error)
-    }
-  }
-
   async function handleToggle(id: string) {
-    setError(null)
     const result = await toggleUserActive(id)
     if (result.success) {
       startTransition(() => onMutate())
     } else {
-      setError(result.error)
+      alert(result.error)
     }
   }
 
@@ -63,8 +47,7 @@ export function UserTable({ users, divisions, onMutate }: UserTableProps) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {error && <p className="text-sm text-destructive">{error}</p>}
+    <div className="rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -79,64 +62,53 @@ export function UserTable({ users, divisions, onMutate }: UserTableProps) {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              {editingId === user.id ? (
-                <TableCell colSpan={6}>
-                  <div className="py-2">
-                    <UserForm
-                      defaultValues={{
+              <TableCell className="font-medium text-slate-800">{user.name}</TableCell>
+              <TableCell className="text-slate-500">{user.username}</TableCell>
+              <TableCell>
+                <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
+                  {user.role === 'ADMIN' ? 'Admin' : 'Pengguna'}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-slate-600">{user.division?.name ?? '—'}</TableCell>
+              <TableCell>
+                <Badge
+                  variant="outline"
+                  className={
+                    user.isActive
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-slate-50 text-slate-500 border-slate-200'
+                  }
+                >
+                  {user.isActive ? 'Aktif' : 'Nonaktif'}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-1">
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() =>
+                      onEdit({
+                        id: user.id,
                         name: user.name,
                         username: user.username,
                         role: user.role,
                         divisionId: user.divisionId,
-                      }}
-                      onSubmit={(values) => handleUpdate(user.id, values)}
-                      onCancel={() => { setEditingId(null); setError(null) }}
-                      isSubmitting={isPending}
-                      submitLabel="Simpan"
-                      divisions={divisions}
-                      isEditing
-                    />
-                  </div>
-                </TableCell>
-              ) : (
-                <>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.username}</TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                      {user.role === 'ADMIN' ? 'Admin' : 'Pengguna'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{user.division?.name ?? '—'}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={user.isActive ? 'default' : 'secondary'}
-                      className={user.isActive ? 'bg-green-100 text-green-700 hover:bg-green-100' : ''}
-                    >
-                      {user.isActive ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => { setEditingId(user.id); setError(null) }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggle(user.id)}
-                        disabled={isPending}
-                      >
-                        {user.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                      </Button>
-                    </div>
-                  </TableCell>
-                </>
-              )}
+                      })
+                    }
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleToggle(user.id)}
+                    disabled={isPending}
+                  >
+                    {user.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                  </Button>
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -1,48 +1,28 @@
-import Link from 'next/link'
 import { auth } from '@/auth'
-import { LogoutButton } from '@/components/auth/logout-button'
+import { Sidebar, MobileTopBar } from '@/components/layout/sidebar'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { SyncButton } from '@/components/pwa/sync-button'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   const isAdmin = session?.user?.role === 'ADMIN'
+  const userName = session?.user?.name ?? session?.user?.email ?? 'Pengguna'
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <nav className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <Link href="/documents" className="font-bold tracking-tight">
-              DIAN
-            </Link>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <Link href="/documents" className="hover:text-foreground transition-colors">
-                Dokumen
-              </Link>
-              {isAdmin && (
-                <Link href="/upload" className="hover:text-foreground transition-colors">
-                  Unggah
-                </Link>
-              )}
-              <Link href="/search" className="hover:text-foreground transition-colors">
-                Cari
-              </Link>
-              {isAdmin && (
-                <Link href="/admin" className="hover:text-foreground transition-colors">
-                  Admin
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <InstallPrompt />
-            <SyncButton />
-            <LogoutButton />
-          </div>
-        </nav>
-      </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+    <div className="flex min-h-screen bg-slate-50">
+      <Sidebar isAdmin={isAdmin} userName={userName} />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile top bar — hamburger + logo, hidden on md+ */}
+        <MobileTopBar isAdmin={isAdmin} userName={userName} />
+        {/* Desktop header — PWA controls, hidden below md */}
+        <div className="hidden md:flex h-16 shrink-0 items-center justify-end border-b border-border/80 bg-white px-6 gap-2">
+          <InstallPrompt />
+          <SyncButton />
+        </div>
+
+        <main className="flex-1 p-6 md:p-8">{children}</main>
+      </div>
     </div>
   )
 }

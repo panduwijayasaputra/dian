@@ -104,7 +104,9 @@ export function UserForm({
           }}
         >
           <SelectTrigger id="user-role" className="w-full">
-            <SelectValue placeholder="Pilih role" />
+            <SelectValue placeholder="Pilih role">
+              {role === 'ADMIN' ? 'Admin' : 'Pengguna'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ADMIN">Admin</SelectItem>
@@ -121,7 +123,9 @@ export function UserForm({
             onValueChange={(val) => setDivisionId(val || null)}
           >
             <SelectTrigger id="user-division" className="w-full">
-              <SelectValue placeholder="Pilih divisi" />
+              <SelectValue placeholder="Pilih divisi">
+                {divisions.find((d) => d.id === divisionId)?.name}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {divisions.map((d) => (

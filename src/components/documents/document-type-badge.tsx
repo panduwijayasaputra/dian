@@ -30,6 +30,14 @@ const TYPE_CONFIG: Record<DocumentType, { label: string; className: string }> = 
     label: 'Lainnya',
     className: 'bg-gray-100 text-gray-700 hover:bg-gray-100',
   },
+  SPT: {
+    label: 'SPT',
+    className: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
+  },
+  NOTA_DINAS: {
+    label: 'Nota Dinas',
+    className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100',
+  },
 }
 
 export function DocumentTypeBadge({ type }: { type: DocumentType }) {

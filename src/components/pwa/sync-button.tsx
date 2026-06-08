@@ -1,11 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { CloudCheck, CloudOff, CloudUpload, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { listDocuments } from '@/lib/idb'
 import { syncAll } from '@/lib/sync'
+
+function subscribeToOnline(callback: () => void) {
+  window.addEventListener('online', callback)
+  window.addEventListener('offline', callback)
+  return () => {
+    window.removeEventListener('online', callback)
+    window.removeEventListener('offline', callback)
+  }
+}
 
 function timeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime()
@@ -27,10 +36,13 @@ export function SyncButton() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSynced, setLastSynced] = useState<Date | null>(null)
   const [pendingCount, setPendingCount] = useState(0)
-  const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator !== 'undefined' ? navigator.onLine : true,
-  )
   const isSyncingRef = useRef(false)
+
+  const isOnline = useSyncExternalStore(
+    subscribeToOnline,
+    () => navigator.onLine,
+    () => true,
+  )
 
   const handleSync = useCallback(async () => {
     if (isSyncingRef.current) return
@@ -47,8 +59,6 @@ export function SyncButton() {
   }, [])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-
     getPendingCount().then((count) => {
       setPendingCount(count)
       // Seed IndexedDB on first load if empty
@@ -58,22 +68,11 @@ export function SyncButton() {
         })
       }
     })
-
-    function handleOnline() {
-      setIsOnline(true)
-      void handleSync()
-    }
-    function handleOffline() {
-      setIsOnline(false)
-    }
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
   }, [handleSync])
+
+  useEffect(() => {
+    if (isOnline) void handleSync()
+  }, [isOnline, handleSync])
 
   function icon() {
     if (isSyncing) return <Loader2 className="h-4 w-4 animate-spin" />
