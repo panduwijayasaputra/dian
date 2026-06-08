@@ -1,7 +1,7 @@
 import { auth } from '@/auth'
 import { generateEmbedding } from '@/lib/generate-embeddings'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@/generated/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import OpenAI from 'openai'
 import { NextResponse } from 'next/server'
 
