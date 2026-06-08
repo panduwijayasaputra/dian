@@ -84,7 +84,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
     - Show first division name as a badge; if multiple, show `+N lagi`
 
 - [ ] 4.0 Build chart components (trend chart, type breakdown)
-  - [ ] 4.1 Implement `TrendChart` component
+  - [x] 4.1 Implement `TrendChart` component
     - `"use client"` directive at top
     - Props: `data: TrendDataPoint[]` (`{ date: string; count: number }[]`)
     - Use shadcn `<ChartContainer>` with a `config` object (`{ count: { label: 'Dokumen', color: 'var(--color-primary)' } }`)
@@ -95,7 +95,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
       - `<Bar dataKey="count" fill="var(--color-primary)" radius={[4,4,0,0]} />`
     - Wrap in a `Card` with title "Tren Unggahan (30 Hari Terakhir)"
     - If all counts are 0, show a centered "Belum ada data." message instead of the chart
-  - [ ] 4.2 Implement `TypeBreakdownChart` component (admin only)
+  - [x] 4.2 Implement `TypeBreakdownChart` component (admin only)
     - `"use client"` directive at top
     - Props: `data: TypeBreakdownItem[]` (`{ type: string; label: string; count: number }[]`)
     - Use shadcn `<ChartContainer>` with config mapping each type to a color
