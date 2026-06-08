@@ -71,7 +71,7 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Confirm the migration file is created in `prisma/migrations/`.
     - Run `pnpm prisma generate` to regenerate the client.
 
-- [ ] 2.0 API: Session management endpoints
+- [x] 2.0 API: Session management endpoints
   - [x] 2.1 Create `GET /api/chat/sessions` — list sessions
     - Create `src/app/api/chat/sessions/route.ts`.
     - Use `auth()` from `@/auth` to get the current user. Return `401` if not authenticated.
@@ -84,17 +84,17 @@ Based on: `docs/prd/prd-ai-chat.md`
     - Create a new `ChatSession` record via `prisma.chatSession.create`.
     - Return `{ session: { id, title, createdAt, updatedAt } }` with status `201`.
 
-- [ ] 3.0 API: Streaming message endpoint with RAG pipeline
-  - [ ] 3.1 Create the route file and authenticate
+- [x] 3.0 API: Streaming message endpoint with RAG pipeline
+  - [x] 3.1 Create the route file and authenticate
     - Create `src/app/api/chat/[sessionId]/message/route.ts`.
     - Export a `POST` handler.
     - Use `auth()` to get the current user. Return `401` if not authenticated.
     - Read `sessionId` from `params` and `content` from the request body.
     - Verify the session exists and belongs to `session.user.id` via `prisma.chatSession.findFirst`. Return `404` if not found.
-  - [ ] 3.2 Save the user message
+  - [x] 3.2 Save the user message
     - Create a `ChatMessage` record with `role: "user"`, `content`, `sessionId`.
     - Update `chatSession.updatedAt` by calling `prisma.chatSession.update` with `updatedAt: new Date()`.
-  - [ ] 3.3 Embed the user query and run vector search
+  - [x] 3.3 Embed the user query and run vector search
     - Import `generateEmbedding` from `@/lib/generate-embeddings`.
     - Call `generateEmbedding(content)` to get a `number[]` vector.
     - If embedding fails, skip vector search and set chunks to `[]`.
@@ -110,7 +110,7 @@ Based on: `docs/prd/prd-ai-chat.md`
       LIMIT 5
       ```
     - Use `prisma.$queryRaw` with `Prisma.sql` template tag and pass the embedding as a formatted vector string `[x,y,z,...]`.
-  - [ ] 3.4 Build the system prompt with context
+  - [x] 3.4 Build the system prompt with context
     - If chunks were found, format them into a context block:
       ```
       Kamu adalah DIAN, asisten dokumen pemerintah. Jawab pertanyaan berdasarkan dokumen berikut saja.
@@ -123,7 +123,7 @@ Based on: `docs/prd/prd-ai-chat.md`
       ```
     - If no chunks found, use the same prompt but state there are no matching documents.
     - Build the messages array: system prompt + all previous messages in this session (fetched from DB) + the new user message.
-  - [ ] 3.5 Stream the OpenAI response
+  - [x] 3.5 Stream the OpenAI response
     - Create an OpenAI client using `new OpenAI({ apiKey: process.env.OPENAI_API_KEY })`.
     - Call `client.chat.completions.create` with `model: "gpt-4o-mini"`, `stream: true`, and the messages array.
     - Create a `ReadableStream` that encodes each token chunk as `data: <token>\n\n` (SSE format).
