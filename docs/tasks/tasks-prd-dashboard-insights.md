@@ -66,7 +66,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
     - Return typed `DashboardStats` object
 
 - [ ] 3.0 Build reusable dashboard UI components (stat card, table)
-  - [ ] 3.1 Implement `StatCard` component
+  - [x] 3.1 Implement `StatCard` component
     - Props: `label: string`, `value: number | string`, `icon: LucideIcon`, `change: number` (delta vs last month), `suffix?: string` (e.g. "dari 6 divisi")
     - Render the card using the existing shadcn `Card` with `p-5`
     - Show icon in `bg-accent` rounded box (same as current layout)
@@ -75,7 +75,7 @@ Based on: `docs/prd/prd-dashboard-insights.md`
       - `change < 0` → red text, `−N dari bulan lalu`
       - `change === 0` → slate text, `sama seperti bulan lalu`
     - For cards with a fixed suffix (divisions, users), show `suffix` instead of change text
-  - [ ] 3.2 Implement `RecentDocumentsTable` component
+  - [x] 3.2 Implement `RecentDocumentsTable` component
     - Props: `documents: RecentDocument[]`
     - Render the same table structure as the current mock table (Nomor, Perihal, Tanggal, Divisi columns)
     - Each `<tr>` wraps a `next/link` to `/documents?id={doc.id}` (or the document viewer route — check existing routing)

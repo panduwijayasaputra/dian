@@ -19,6 +19,7 @@ export type RecentDocument = {
   documentNumber: string | null
   subject: string | null
   documentDate: Date | null
+  extractionStatus: string
   divisions: string[]
 }
 
@@ -160,6 +161,7 @@ async function getAdminStats(): Promise<AdminDashboardStats> {
     documentNumber: d.documentNumber,
     subject: d.subject,
     documentDate: d.documentDate,
+    extractionStatus: d.extractionStatus,
     divisions: d.divisions.map((dd) => dd.division.name),
   }))
 
@@ -267,6 +269,7 @@ async function getUserStats(userId: string, divisionId: string | null): Promise<
     documentNumber: d.documentNumber,
     subject: d.subject,
     documentDate: d.documentDate,
+    extractionStatus: d.extractionStatus,
     divisions: d.divisions.map((dd) => dd.division.name),
   }))
 
