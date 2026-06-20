@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 
 export default function OfflinePage() {
   return (
@@ -8,9 +8,9 @@ export default function OfflinePage() {
       <p className="max-w-sm text-sm text-muted-foreground">
         Halaman ini tidak tersedia saat offline. Periksa koneksi internet Anda, lalu coba lagi.
       </p>
-      <Button asChild variant="outline">
-        <Link href="/documents">Kembali ke Dokumen</Link>
-      </Button>
+      <Link href="/documents" className={buttonVariants({ variant: 'outline' })}>
+        Kembali ke Dokumen
+      </Link>
     </div>
   )
 }
