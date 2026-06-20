@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar isAdmin={isAdmin} userName={userName} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-64">
         {/* Mobile top bar — hamburger + logo, hidden on md+ */}
         <MobileTopBar isAdmin={isAdmin} userName={userName} />
         {/* Desktop header — PWA controls, hidden below md */}

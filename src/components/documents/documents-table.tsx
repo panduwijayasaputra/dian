@@ -1,6 +1,7 @@
 'use client'
 
 import type { DocumentStatus, DocumentType } from '@/generated/prisma/enums'
+import { Eye, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DivisionBadge } from '@/components/admin/division-badge'
@@ -35,24 +36,24 @@ export function DocumentsTable({ documents, onView, onEdit }: DocumentsTableProp
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden">
-      <Table>
+    <div className="rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden **:data-[slot=table-container]:overflow-hidden">
+      <Table className="table-fixed w-full [&_th]:h-12 [&_th]:px-5 [&_td]:px-5 [&_td]:py-4">
         <TableHeader>
           <TableRow>
-            <TableHead>No. Dokumen</TableHead>
-            <TableHead>Jenis</TableHead>
+            <TableHead className="w-[13%]">No. Dokumen</TableHead>
+            <TableHead className="w-[10%]">Jenis</TableHead>
             <TableHead>Perihal</TableHead>
-            <TableHead>Pengirim</TableHead>
-            <TableHead>Tanggal</TableHead>
-            <TableHead>Divisi</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-24" />
+            <TableHead className="w-[13%]">Pengirim</TableHead>
+            <TableHead className="w-[9%]">Tanggal</TableHead>
+            <TableHead className="w-[10%]">Divisi</TableHead>
+            <TableHead className="w-[9%]">Status</TableHead>
+            <TableHead className="w-[7%]" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {documents.map((doc) => (
             <TableRow key={doc.id}>
-              <TableCell className="font-mono text-xs text-slate-600">
+              <TableCell className="font-mono text-xs text-slate-600 truncate">
                 {doc.documentNumber ?? '—'}
               </TableCell>
               <TableCell>
@@ -62,10 +63,10 @@ export function DocumentsTable({ documents, onView, onEdit }: DocumentsTableProp
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="max-w-48 truncate text-slate-700">
+              <TableCell className="truncate text-slate-700">
                 {doc.subject ?? '—'}
               </TableCell>
-              <TableCell className="text-slate-600">{doc.sender ?? '—'}</TableCell>
+              <TableCell className="truncate text-slate-600">{doc.sender ?? '—'}</TableCell>
               <TableCell className="text-slate-600">
                 {doc.documentDate
                   ? new Date(doc.documentDate).toLocaleDateString('id-ID', {
@@ -90,10 +91,11 @@ export function DocumentsTable({ documents, onView, onEdit }: DocumentsTableProp
                 <StatusBadge status={doc.status} />
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 px-1">
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Lihat dokumen"
                     disabled={
                       !doc.r2Key ||
                       doc.status === 'LOCAL' ||
@@ -102,14 +104,15 @@ export function DocumentsTable({ documents, onView, onEdit }: DocumentsTableProp
                     }
                     onClick={() => onView?.(doc.id)}
                   >
-                    Lihat
+                    <Eye className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon-sm"
+                    title="Edit metadata"
                     onClick={() => onEdit?.(doc.id)}
                   >
-                    Edit
+                    <Pencil className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>

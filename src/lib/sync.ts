@@ -1,6 +1,23 @@
-import { deleteDocument, getDocument, listDocuments, upsertDocument } from '@/lib/idb'
+import { deleteDocument, getDocument, listDocuments, upsertDocument, type LocalDocument } from '@/lib/idb'
 import { uploadDocument } from '@/app/(app)/upload/actions'
-import { getDocumentsForSync } from '@/app/(app)/documents/actions'
+import { getDocumentsForSync, saveDocumentMetadata } from '@/app/(app)/documents/actions'
+
+function toMetadataValues(doc: LocalDocument) {
+  return {
+    documentNumber: doc.document_number ?? '',
+    documentDate: doc.document_date ?? '',
+    sender: doc.sender ?? '',
+    receiver: doc.receiver ?? '',
+    subject: doc.subject ?? '',
+    documentType: '',
+    urgency: doc.urgency ?? '',
+    security: doc.security ?? '',
+    deadlineStart: doc.deadline_start ?? '',
+    deadlineEnd: doc.deadline_end ?? '',
+    memo: doc.memo ?? '',
+    divisionIds: doc.division_ids ?? [],
+  }
+}
 
 export async function uploadPending(): Promise<{ uploaded: number; failed: number }> {
   const all = await listDocuments()
@@ -27,9 +44,6 @@ export async function uploadPending(): Promise<{ uploaded: number; failed: numbe
       const result = await uploadDocument(formData)
 
       if (result.success) {
-        // Remove the temporary local record and replace it with the server-assigned id.
-        // Status is 'processing' because the server just created the document and will
-        // process it asynchronously. downloadAll() will update it to the final status.
         await deleteDocument(doc.id)
         await upsertDocument({
           ...doc,
@@ -39,6 +53,11 @@ export async function uploadPending(): Promise<{ uploaded: number; failed: numbe
           file_blob: null,
           synced_at: new Date().toISOString(),
         })
+        // Persist metadata the user entered offline onto the newly-created server doc
+        const hasMetadata = doc.document_number || doc.sender || doc.subject || doc.document_date
+        if (hasMetadata) {
+          await saveDocumentMetadata(result.documentId, toMetadataValues(doc))
+        }
         uploaded++
       } else {
         console.warn('[sync] upload failed for document', doc.id, result.error)

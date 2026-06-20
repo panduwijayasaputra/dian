@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select'
-import type { ConfidenceLevel } from '@/lib/extract-metadata'
+import type { ConfidenceLevel } from '@/lib/extract-document'
 import { DivisionSelect } from './division-select'
 
 type Division = { id: string; name: string }

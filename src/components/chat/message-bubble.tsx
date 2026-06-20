@@ -46,7 +46,7 @@ export function MessageBubble({ role, content, sources = [], isStreaming, onView
         {sources.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-slate-400">Sumber dokumen</span>
-            {sources.map((src) => (
+            {sources.filter((src, i, arr) => arr.findIndex(s => s.documentId === src.documentId) === i).map((src) => (
               <SourceCard key={src.documentId} {...src} onView={onViewDocument ?? (() => {})} />
             ))}
           </div>

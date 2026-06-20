@@ -3,10 +3,9 @@
 import { auth } from '@/auth'
 import type { LocalDocument } from '@/lib/idb'
 import { chunkText } from '@/lib/chunk-text'
-import { extractMetadataFromText, type ExtractionResult } from '@/lib/extract-metadata'
+import { extractDocument, type ExtractionResult } from '@/lib/extract-document'
 import { generateEmbedding } from '@/lib/generate-embeddings'
-import { generateSummary } from '@/lib/generate-summary'
-import { extractTextFromR2, isGarbled, getBufferFromR2, extractTextViaOCR } from '@/lib/pdf'
+import { getBufferFromR2 } from '@/lib/pdf'
 import { prisma } from '@/lib/prisma'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 import type { MetadataFormValues } from '@/components/documents/metadata-form'
@@ -31,7 +30,7 @@ export async function getDocumentViewUrl(documentId: string): Promise<ViewUrlRes
     return { success: false, error: 'Document not found.' }
   }
 
-  if (session.user.role !== 'ADMIN') {
+  if (session.user.role !== 'ADMIN' && document.userId !== session.user.id) {
     const divisionId = session.user.divisionId
     if (!divisionId) return { success: false, error: 'Document not found.' }
     const access = await prisma.documentDivision.findFirst({
@@ -79,41 +78,19 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
     data: { status: 'EXTRACTING' },
   })
 
-  const rawText = await extractTextFromR2(document.r2Key)
-
-  let extractedText: string | null = rawText
-  let result: ExtractionResult
-  let extractionStatus: 'pending' | 'completed' | 'failed' | 'manual_only' = 'pending'
-
-  const garbled = isGarbled(rawText)
-  console.log(`[extract] doc=${documentId} garbled=${garbled} rawLen=${rawText.length}`)
-
-  if (garbled) {
-    const buffer = await getBufferFromR2(document.r2Key)
-    if (buffer) {
-      console.log(`[extract] primary text garbled — attempting local OCR fallback`)
-      const ocrText = await extractTextViaOCR(buffer)
-      console.log(`[extract] OCR text len=${ocrText.length}`)
-      if (ocrText.length > 0 && !isGarbled(ocrText)) {
-        extractedText = ocrText
-        result = await extractMetadataFromText(ocrText)
-        extractionStatus = 'completed'
-      } else {
-        console.log(`[extract] OCR text also garbled or empty — manual_only`)
-        extractedText = null
-        result = await extractMetadataFromText(rawText)
-        extractionStatus = 'manual_only'
-      }
-    } else {
-      result = await extractMetadataFromText(rawText)
-      extractionStatus = 'failed'
-    }
-  } else {
-    result = await extractMetadataFromText(rawText)
-    extractionStatus = 'completed'
+  const buffer = await getBufferFromR2(document.r2Key)
+  if (!buffer) {
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { status: 'REVIEW', extractionStatus: 'failed' },
+    })
+    return { success: false, error: 'Could not read document file.' }
   }
 
-  const summary = extractionStatus === 'completed' ? await generateSummary(extractedText) : null
+  const { metadata: result, summary, extractedText: rawExtracted } = await extractDocument(buffer)
+
+  const extractedText = rawExtracted.trim() ? rawExtracted : null
+  const extractionStatus = extractedText ? 'completed' : 'manual_only'
 
   await prisma.document.update({
     where: { id: documentId },
@@ -127,7 +104,7 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
   })
 
   if (extractionStatus === 'completed') {
-    const chunks = chunkText(extractedText)
+    const chunks = chunkText(extractedText!)
     if (chunks.length > 0) {
       try {
         await prisma.documentChunk.createMany({
@@ -185,7 +162,16 @@ export async function extractDocumentMetadata(documentId: string): Promise<Extra
 
 type SimpleResult = { success: true } | { success: false; error: string }
 
-export type DuplicateInfo = { id: string; documentNumber: string; sender: string | null; documentDate: string | null }
+export type DuplicateInfo = {
+  id: string
+  documentNumber: string
+  documentDate: string | null
+  sender: string | null
+  receiver: string | null
+  subject: string | null
+  documentType: string | null
+  urgency: string | null
+}
 
 type SaveResult =
   | { success: true; document: Awaited<ReturnType<typeof prisma.document.findUniqueOrThrow>> }
@@ -205,21 +191,33 @@ export async function saveDocumentMetadata(
     return { success: false, error: 'Document not found.' }
   }
 
-  if (!force && values.documentNumber) {
+  if (values.documentNumber) {
     const existing = await prisma.document.findFirst({
       where: { documentNumber: values.documentNumber, id: { not: documentId }, status: { not: 'LOCAL' } },
-      select: { id: true, documentNumber: true, sender: true, documentDate: true },
+      select: { id: true, documentNumber: true, sender: true, documentDate: true, r2Key: true, receiver: true, subject: true, documentType: true, urgency: true },
     })
     if (existing) {
-      return {
-        success: false,
-        duplicate: {
-          id: existing.id,
-          documentNumber: existing.documentNumber!,
-          sender: existing.sender,
-          documentDate: existing.documentDate ? existing.documentDate.toISOString().split('T')[0] : null,
-        },
+      if (!force) {
+        return {
+          success: false,
+          duplicate: {
+            id: existing.id,
+            documentNumber: existing.documentNumber!,
+            documentDate: existing.documentDate ? existing.documentDate.toISOString().split('T')[0] : null,
+            sender: existing.sender,
+            receiver: existing.receiver,
+            subject: existing.subject,
+            documentType: existing.documentType,
+            urgency: existing.urgency,
+          },
+        }
       }
+      if (existing.r2Key) {
+        await r2Client.send(
+          new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: existing.r2Key }),
+        ).catch(() => {})
+      }
+      await prisma.document.delete({ where: { id: existing.id } })
     }
   }
 

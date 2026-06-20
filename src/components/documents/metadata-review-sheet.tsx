@@ -6,8 +6,10 @@ import {
   extractDocumentMetadata,
   saveDocumentMetadata,
   deleteDocument,
+  getDocumentViewUrl,
   type DuplicateInfo,
 } from '@/app/(app)/documents/actions'
+import { upsertDocument, deleteDocument as idbDeleteDocument } from '@/lib/idb'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { ExtractionResult } from '@/lib/extract-metadata'
+import type { ExtractionResult } from '@/lib/extract-document'
 import { MetadataForm, type MetadataFormValues } from './metadata-form'
 
 type Division = { id: string; name: string }
@@ -27,6 +29,7 @@ interface MetadataReviewSheetProps {
   documentId: string | null
   onClose: () => void
   divisions?: Division[]
+  isLocal?: boolean
 }
 
 function extractionToDefaults(result: ExtractionResult): Partial<MetadataFormValues> {
@@ -57,7 +60,35 @@ function extractionToSuggestions(result: ExtractionResult) {
   return suggestions
 }
 
-export function MetadataReviewSheet({ open, documentId, onClose, divisions }: MetadataReviewSheetProps) {
+const DOCUMENT_TYPE_LABEL: Record<string, string> = {
+  INCOMING_LETTER: 'Surat Masuk',
+  OUTGOING_LETTER: 'Surat Keluar',
+  SPT: 'SPT',
+  NOTA_DINAS: 'Nota Dinas',
+  OTHER: 'Lainnya',
+}
+
+const URGENCY_LABEL: Record<string, string> = {
+  BIASA: 'Biasa',
+  SEGERA: 'Segera',
+  SANGAT_SEGERA: 'Sangat Segera',
+}
+
+const EMPTY_EXTRACTION: ExtractionResult = {
+  documentNumber: { value: null, confidence: 'low' },
+  documentDate: { value: null, confidence: 'low' },
+  sender: { value: null, confidence: 'low' },
+  receiver: { value: null, confidence: 'low' },
+  subject: { value: null, confidence: 'low' },
+  documentType: { value: null, confidence: 'low' },
+  urgency: { value: null, confidence: 'low' },
+  security: { value: null, confidence: 'low' },
+  deadlineStart: { value: null, confidence: 'low' },
+  deadlineEnd: { value: null, confidence: 'low' },
+  memo: { value: null, confidence: 'low' },
+}
+
+export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLocal }: MetadataReviewSheetProps) {
   const [isExtracting, setIsExtracting] = useState(false)
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null)
   const [isManualOnly, setIsManualOnly] = useState(false)
@@ -71,35 +102,58 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions }: Me
     setExtraction(null)
     setIsManualOnly(false)
     setError(null)
-    setIsExtracting(true)
 
+    if (isLocal) {
+      setExtraction(EMPTY_EXTRACTION)
+      return
+    }
+
+    setIsExtracting(true)
     extractDocumentMetadata(documentId).then((result) => {
       setIsExtracting(false)
       if (result.success) {
         setExtraction(result.result)
         setIsManualOnly(result.document.extractionStatus === 'manual_only')
       } else {
-        setExtraction({
-          documentNumber: { value: null, confidence: 'low' },
-          documentDate: { value: null, confidence: 'low' },
-          sender: { value: null, confidence: 'low' },
-          receiver: { value: null, confidence: 'low' },
-          subject: { value: null, confidence: 'low' },
-          documentType: { value: null, confidence: 'low' },
-          urgency: { value: null, confidence: 'low' },
-          security: { value: null, confidence: 'low' },
-          deadlineStart: { value: null, confidence: 'low' },
-          deadlineEnd: { value: null, confidence: 'low' },
-          memo: { value: null, confidence: 'low' },
-        })
+        setExtraction(EMPTY_EXTRACTION)
       }
     })
-  }, [open, documentId])
+  }, [open, documentId, isLocal])
 
   async function handleSave(values: MetadataFormValues, force = false) {
     if (!documentId) return
     setIsSubmitting(true)
     setError(null)
+
+    if (isLocal) {
+      await upsertDocument({
+        id: documentId,
+        document_number: values.documentNumber || null,
+        document_date: values.documentDate || null,
+        sender: values.sender || null,
+        receiver: values.receiver || null,
+        subject: values.subject || null,
+        urgency: values.urgency || null,
+        security: values.security || null,
+        deadline_start: values.deadlineStart || null,
+        deadline_end: values.deadlineEnd || null,
+        memo: values.memo || null,
+        summary: null,
+        extracted_text: null,
+        extraction_status: 'pending',
+        status: 'pending_sync',
+        r2_key: null,
+        file_blob: null,
+        original_name: null,
+        created_at: new Date().toISOString(),
+        synced_at: null,
+        division_ids: values.divisionIds ?? [],
+      })
+      setIsSubmitting(false)
+      onClose()
+      return
+    }
+
     const result = await saveDocumentMetadata(documentId, values, force)
     setIsSubmitting(false)
     if (result.success) {
@@ -114,8 +168,17 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions }: Me
   async function handleConfirmedDiscard() {
     if (!documentId) return
     setShowDiscardConfirm(false)
-    await deleteDocument(documentId)
+    if (isLocal) {
+      await idbDeleteDocument(documentId)
+    } else {
+      await deleteDocument(documentId)
+    }
     onClose()
+  }
+
+  async function handleViewDocument(id: string) {
+    const result = await getDocumentViewUrl(id)
+    if (result.success) window.open(result.url, '_blank')
   }
 
   async function handleForceSave() {
@@ -173,26 +236,76 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions }: Me
       </Dialog>
 
       <Dialog open={!!duplicate} onOpenChange={(o) => { if (!o) setDuplicate(null) }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Nomor dokumen sudah ada</DialogTitle>
-            <DialogDescription className="space-y-2 text-sm">
-              Dokumen dengan nomor <span className="font-medium text-foreground">{duplicate?.info.documentNumber}</span> sudah tersimpan
-              {(duplicate?.info.sender || duplicate?.info.documentDate) && (
-                <span className="block rounded-md border px-3 py-2 text-xs text-muted-foreground mt-1.5 space-y-0.5">
-                  {duplicate?.info.sender && <span className="block">Pengirim: {duplicate.info.sender}</span>}
-                  {duplicate?.info.documentDate && <span className="block">Tanggal: {duplicate.info.documentDate}</span>}
-                </span>
-              )}
-              {'. Tetap simpan dokumen baru ini?'}
+            <DialogDescription>
+              Dokumen lama beserta filenya akan dihapus dan diganti. Periksa perbedaannya sebelum melanjutkan.
             </DialogDescription>
           </DialogHeader>
+          {duplicate && (
+            <div className="overflow-x-auto rounded-md border text-sm">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Field</th>
+                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        Dokumen Lama
+                        <button
+                          type="button"
+                          onClick={() => handleViewDocument(duplicate.info.id)}
+                          className="text-xs font-normal text-primary underline underline-offset-2 hover:no-underline"
+                        >
+                          Lihat
+                        </button>
+                      </div>
+                    </th>
+                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        Dokumen Baru
+                        {documentId && (
+                          <button
+                            type="button"
+                            onClick={() => handleViewDocument(documentId)}
+                            className="text-xs font-normal text-primary underline underline-offset-2 hover:no-underline"
+                          >
+                            Lihat
+                          </button>
+                        )}
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {([
+                    ['Nomor', duplicate.info.documentNumber, duplicate.pendingValues.documentNumber],
+                    ['Tanggal', duplicate.info.documentDate, duplicate.pendingValues.documentDate],
+                    ['Pengirim', duplicate.info.sender, duplicate.pendingValues.sender],
+                    ['Penerima', duplicate.info.receiver, duplicate.pendingValues.receiver],
+                    ['Perihal', duplicate.info.subject, duplicate.pendingValues.subject],
+                    ['Jenis', duplicate.info.documentType ? (DOCUMENT_TYPE_LABEL[duplicate.info.documentType] ?? duplicate.info.documentType) : null, duplicate.pendingValues.documentType ? (DOCUMENT_TYPE_LABEL[duplicate.pendingValues.documentType] ?? duplicate.pendingValues.documentType) : null],
+                    ['Sifat', duplicate.info.urgency ? (URGENCY_LABEL[duplicate.info.urgency] ?? duplicate.info.urgency) : null, duplicate.pendingValues.urgency ? (URGENCY_LABEL[duplicate.pendingValues.urgency] ?? duplicate.pendingValues.urgency) : null],
+                  ] as [string, string | null | undefined, string | null | undefined][]).map(([label, oldVal, newVal]) => {
+                    const differs = (oldVal || '') !== (newVal || '')
+                    return (
+                      <tr key={label} className={differs ? 'bg-amber-50' : ''}>
+                        <td className="px-3 py-2 text-muted-foreground">{label}</td>
+                        <td className={`px-3 py-2 ${differs ? 'text-destructive line-through' : ''}`}>{oldVal || <span className="text-muted-foreground/50">—</span>}</td>
+                        <td className={`px-3 py-2 ${differs ? 'font-medium' : ''}`}>{newVal || <span className="text-muted-foreground/50">—</span>}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDuplicate(null)}>
               Batal
             </Button>
             <Button variant="destructive" onClick={handleForceSave} disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Tetap Simpan'}
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ganti Dokumen'}
             </Button>
           </DialogFooter>
         </DialogContent>

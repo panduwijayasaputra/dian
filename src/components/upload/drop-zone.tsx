@@ -12,7 +12,7 @@ const MAX_SIZE_BYTES = 20 * 1024 * 1024
 type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
 
 interface DropZoneProps {
-  onUploadComplete?: (documentId: string) => void
+  onUploadComplete?: (documentId: string, isLocal?: boolean) => void
 }
 
 export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
@@ -71,7 +71,7 @@ export function DropZone({ onUploadComplete }: DropZoneProps = {}) {
           setCurrentFileName(null)
           setIsOfflineQueue(false)
           if (onUploadComplete) {
-            onUploadComplete(localId)
+            onUploadComplete(localId, true)
           } else {
             router.push('/documents')
           }

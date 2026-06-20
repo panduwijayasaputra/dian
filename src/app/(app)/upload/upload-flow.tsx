@@ -14,20 +14,28 @@ interface UploadFlowProps {
 export function UploadFlow({ divisions }: UploadFlowProps) {
   const router = useRouter()
   const [documentId, setDocumentId] = useState<string | null>(null)
+  const [isLocal, setIsLocal] = useState(false)
 
   function handleSheetClose() {
     setDocumentId(null)
+    setIsLocal(false)
     router.push('/documents')
   }
 
   return (
     <>
-      <DropZone onUploadComplete={(id) => setDocumentId(id)} />
+      <DropZone
+        onUploadComplete={(id, local) => {
+          setDocumentId(id)
+          setIsLocal(local ?? false)
+        }}
+      />
       <MetadataReviewSheet
         open={!!documentId}
         documentId={documentId}
         onClose={handleSheetClose}
         divisions={divisions}
+        isLocal={isLocal}
       />
     </>
   )

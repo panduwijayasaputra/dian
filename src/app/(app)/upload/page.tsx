@@ -21,8 +21,11 @@ export default async function UploadPage() {
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           Kembali ke Dokumen
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Unggah Dokumen</h1>
-        <p className="mt-1 text-sm text-slate-500">Unggah file PDF untuk diproses dan diindeks</p>
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Unggah Dokumen</h1>
+          <p className="mt-1 text-sm text-slate-500">Unggah file PDF untuk diproses dan diindeks</p>
+
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto">

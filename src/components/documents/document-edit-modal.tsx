@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { MetadataForm, type MetadataFormValues } from './metadata-form'
 import { updateDocumentMetadata, extractDocumentMetadata } from '@/app/(app)/documents/actions'
-import type { ConfidenceLevel, ExtractionResult } from '@/lib/extract-metadata'
+import type { ConfidenceLevel, ExtractionResult } from '@/lib/extract-document'
 
 type Division = { id: string; name: string }
 
@@ -121,7 +121,7 @@ export function DocumentEditModal({
           <div className="flex items-center justify-between">
             <DialogTitle>Edit Metadata</DialogTitle>
             {/* // TODO: Re-extract button with AI suggestions (disabled while extracting or submitting, shows loading state while extracting) */}
-            {/* <Button
+            <Button
               type="button"
               variant="outline"
               size="sm"
@@ -134,7 +134,7 @@ export function DocumentEditModal({
                 <Wand2 className="mr-2 h-4 w-4" />
               )}
               {isExtracting ? 'Mengekstrak…' : 'Ekstrak Ulang'}
-            </Button> */}
+            </Button>
           </div>
         </DialogHeader>
         {error && <p className="text-sm text-destructive">{error}</p>}

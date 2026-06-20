@@ -138,7 +138,7 @@ function SidebarBody({ isAdmin, userName, onNavigate }: SidebarProps & { onNavig
 
 export function Sidebar({ isAdmin, userName }: SidebarProps) {
   return (
-    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-border/80 bg-white">
+    <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-40 md:flex md:w-64 md:flex-col border-r border-border/80 bg-white">
       <SidebarBody isAdmin={isAdmin} userName={userName} />
     </aside>
   )

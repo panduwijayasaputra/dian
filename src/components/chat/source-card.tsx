@@ -8,7 +8,7 @@ interface SourceCardProps {
   onView: (documentId: string) => void
 }
 
-export function SourceCard({ documentId, documentNumber, subject, excerpt, onView }: SourceCardProps) {
+export function SourceCard({ documentId, documentNumber, subject, onView }: SourceCardProps) {
   return (
     <button
       onClick={() => onView(documentId)}
@@ -21,7 +21,6 @@ export function SourceCard({ documentId, documentNumber, subject, excerpt, onVie
           {subject ?? 'Tanpa perihal'}
         </span>
       </div>
-      <p className="mt-1.5 line-clamp-2 text-slate-500">{excerpt.slice(0, 120)}</p>
     </button>
   )
 }

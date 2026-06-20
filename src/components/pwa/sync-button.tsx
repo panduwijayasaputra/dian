@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { CloudCheck, CloudOff, CloudUpload, Loader2 } from 'lucide-react'
+import { RefreshCw, CloudOff, CloudUpload, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { listDocuments } from '@/lib/idb'
@@ -78,15 +78,22 @@ export function SyncButton() {
     if (isSyncing) return <Loader2 className="h-4 w-4 animate-spin" />
     if (!isOnline) return <CloudOff className="h-4 w-4" />
     if (pendingCount > 0) return <CloudUpload className="h-4 w-4" />
-    return <CloudCheck className="h-4 w-4" />
+    return <RefreshCw className="h-4 w-4" />
+  }
+
+  function statusText() {
+    if (isSyncing) return 'Menyinkronkan...'
+    if (!isOnline) return 'Offline'
+    if (lastSynced) return timeAgo(lastSynced)
+    return null
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex items-center gap-1.5">
       <div className="relative">
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-sm"
           disabled={isSyncing || !isOnline}
           onClick={() => void handleSync()}
           aria-label="Sync documents"
@@ -102,8 +109,8 @@ export function SyncButton() {
           </Badge>
         )}
       </div>
-      {lastSynced && isOnline && !isSyncing && (
-        <span className="text-[10px] text-muted-foreground">{timeAgo(lastSynced)}</span>
+      {statusText() && (
+        <span className="text-xs text-muted-foreground">{statusText()}</span>
       )}
     </div>
   )
