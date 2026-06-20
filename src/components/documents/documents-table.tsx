@@ -36,91 +36,158 @@ export function DocumentsTable({ documents, onView, onEdit }: DocumentsTableProp
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden **:data-[slot=table-container]:overflow-hidden">
-      <Table className="table-fixed w-full [&_th]:h-12 [&_th]:px-5 [&_td]:px-5 [&_td]:py-4">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[13%]">No. Dokumen</TableHead>
-            <TableHead className="w-[10%]">Jenis</TableHead>
-            <TableHead>Perihal</TableHead>
-            <TableHead className="w-[13%]">Pengirim</TableHead>
-            <TableHead className="w-[9%]">Tanggal</TableHead>
-            <TableHead className="w-[10%]">Divisi</TableHead>
-            <TableHead className="w-[9%]">Status</TableHead>
-            <TableHead className="w-[7%]" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {documents.map((doc) => (
-            <TableRow key={doc.id}>
-              <TableCell className="font-mono text-xs text-slate-600 truncate">
-                {doc.documentNumber ?? '—'}
-              </TableCell>
-              <TableCell>
-                {doc.documentType ? (
-                  <DocumentTypeBadge type={doc.documentType} />
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell className="truncate text-slate-700">
-                {doc.subject ?? '—'}
-              </TableCell>
-              <TableCell className="truncate text-slate-600">{doc.sender ?? '—'}</TableCell>
-              <TableCell className="text-slate-600">
-                {doc.documentDate
-                  ? new Date(doc.documentDate).toLocaleDateString('id-ID', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : '—'}
-              </TableCell>
-              <TableCell>
-                {doc.divisions.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {doc.divisions.map(({ division }) => (
-                      <DivisionBadge key={division.id} name={division.name} color={division.color} />
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={doc.status} />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1 px-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Lihat dokumen"
-                    disabled={
-                      !doc.r2Key ||
-                      doc.status === 'LOCAL' ||
-                      doc.status === 'EXTRACTING' ||
-                      doc.status === 'REVIEW'
-                    }
-                    onClick={() => onView?.(doc.id)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Edit metadata"
-                    onClick={() => onEdit?.(doc.id)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+    <>
+      {/* Desktop table */}
+      <div className="hidden md:block rounded-xl border border-border/60 bg-white shadow-sm overflow-hidden **:data-[slot=table-container]:overflow-hidden">
+        <Table className="table-fixed w-full [&_th]:h-12 [&_th]:px-5 [&_td]:px-5 [&_td]:py-4">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[13%]">No. Dokumen</TableHead>
+              <TableHead className="w-[10%]">Jenis</TableHead>
+              <TableHead>Perihal</TableHead>
+              <TableHead className="w-[13%]">Pengirim</TableHead>
+              <TableHead className="w-[9%]">Tanggal</TableHead>
+              <TableHead className="w-[10%]">Divisi</TableHead>
+              <TableHead className="w-[9%]">Status</TableHead>
+              <TableHead className="w-[7%]" />
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {documents.map((doc) => (
+              <TableRow key={doc.id}>
+                <TableCell className="font-mono text-xs text-slate-600 truncate">
+                  {doc.documentNumber ?? '—'}
+                </TableCell>
+                <TableCell>
+                  {doc.documentType ? (
+                    <DocumentTypeBadge type={doc.documentType} />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="truncate text-slate-700">
+                  {doc.subject ?? '—'}
+                </TableCell>
+                <TableCell className="truncate text-slate-600">{doc.sender ?? '—'}</TableCell>
+                <TableCell className="text-slate-600">
+                  {doc.documentDate
+                    ? new Date(doc.documentDate).toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : '—'}
+                </TableCell>
+                <TableCell>
+                  {doc.divisions.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {doc.divisions.map(({ division }) => (
+                        <DivisionBadge key={division.id} name={division.name} color={division.color} />
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={doc.status} />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 px-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Lihat dokumen"
+                      disabled={
+                        !doc.r2Key ||
+                        doc.status === 'LOCAL' ||
+                        doc.status === 'EXTRACTING' ||
+                        doc.status === 'REVIEW'
+                      }
+                      onClick={() => onView?.(doc.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Edit metadata"
+                      onClick={() => onEdit?.(doc.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2">
+        {documents.map((doc) => (
+          <div key={doc.id} className="rounded-xl border border-border/60 bg-white shadow-sm p-4 space-y-3">
+            <div className="space-y-1">
+              <p className="font-mono text-xs text-slate-500">
+                {doc.documentNumber ?? '—'}
+              </p>
+              <p className="text-sm font-medium text-slate-800 leading-snug">
+                {doc.subject ?? <span className="text-muted-foreground italic">Tanpa perihal</span>}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-500">
+              <StatusBadge status={doc.status} />
+              {doc.documentType && <DocumentTypeBadge type={doc.documentType} />}
+              {doc.documentDate && (
+                <span>
+                  {new Date(doc.documentDate).toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              )}
+              {doc.sender && <span className="truncate">{doc.sender}</span>}
+            </div>
+
+            {doc.divisions.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {doc.divisions.map(({ division }) => (
+                  <DivisionBadge key={division.id} name={division.name} color={division.color} />
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-1 pt-1 border-t border-border/40">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Lihat dokumen"
+                disabled={
+                  !doc.r2Key ||
+                  doc.status === 'LOCAL' ||
+                  doc.status === 'EXTRACTING' ||
+                  doc.status === 'REVIEW'
+                }
+                onClick={() => onView?.(doc.id)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Edit metadata"
+                onClick={() => onEdit?.(doc.id)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 

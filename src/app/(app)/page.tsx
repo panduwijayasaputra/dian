@@ -24,30 +24,34 @@ export default async function BerandaPage() {
 
       {stats.role === 'ADMIN' ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Total Dokumen"
               value={stats.totalDocs}
               icon={FileText}
               change={stats.docsThisMonth - stats.docsLastMonth}
+              color="blue"
             />
             <StatCard
               label="Dokumen Bulan Ini"
               value={stats.docsThisMonth}
               icon={TrendingUp}
               change={stats.docsThisMonth - stats.docsLastMonth}
+              color="emerald"
             />
             <StatCard
               label="Divisi Aktif"
               value={stats.activeDivisions}
               icon={Building2}
               suffix={`dari ${stats.totalDivisions} divisi`}
+              color="violet"
             />
             <StatCard
               label="Pengguna Aktif"
               value={stats.activeUsers}
               icon={Users}
               suffix={`dari ${stats.totalUsers} pengguna`}
+              color="amber"
             />
           </div>
 
@@ -67,18 +71,21 @@ export default async function BerandaPage() {
               value={stats.divisionTotalDocs}
               icon={FileText}
               change={stats.divisionMonthDocs - stats.divisionLastMonthDocs}
+              color="blue"
             />
             <StatCard
               label="Dokumen Bulan Ini"
               value={stats.divisionMonthDocs}
               icon={TrendingUp}
               change={stats.divisionMonthDocs - stats.divisionLastMonthDocs}
+              color="emerald"
             />
             <StatCard
               label="Pencarian Bulan Ini"
               value={stats.mySearchCount}
               icon={Search}
               change={stats.mySearchCount - stats.mySearchLastMonth}
+              color="violet"
             />
           </div>
 

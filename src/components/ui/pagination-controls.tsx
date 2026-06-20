@@ -17,6 +17,7 @@ interface PaginationControlsProps {
   total: number
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
+  label?: string
 }
 
 const PAGE_SIZES = [10, 20, 50]
@@ -28,6 +29,7 @@ export function PaginationControls({
   total,
   onPageChange,
   onPageSizeChange,
+  label = 'dokumen',
 }: PaginationControlsProps) {
   const start = (page - 1) * pageSize + 1
   const end = Math.min(page * pageSize, total)
@@ -37,7 +39,7 @@ export function PaginationControls({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
       <p className="text-sm text-slate-500">
-        {total === 0 ? '0 dokumen' : `${start}–${end} dari ${total} dokumen`}
+        {total === 0 ? `0 ${label}` : `${start}–${end} dari ${total} ${label}`}
       </p>
 
       <div className="flex items-center gap-2">

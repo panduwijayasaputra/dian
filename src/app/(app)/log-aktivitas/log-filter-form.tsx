@@ -1,7 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -17,12 +20,15 @@ export const CATEGORIES: { value: string; label: string }[] = [
   { value: 'DIVISION', label: 'Divisi' },
 ]
 
+const DEFAULT_PAGE_SIZE = 50
+
 interface LogFilterFormProps {
   users: { id: string; name: string }[]
   initialUserId?: string
   initialCategory?: string
   initialFrom?: string
   initialTo?: string
+  pageSize?: number
 }
 
 export function LogFilterForm({
@@ -31,91 +37,90 @@ export function LogFilterForm({
   initialCategory = '',
   initialFrom = '',
   initialTo = '',
+  pageSize = DEFAULT_PAGE_SIZE,
 }: LogFilterFormProps) {
   const router = useRouter()
-  const [userId, setUserId] = useState(initialUserId)
-  const [category, setCategory] = useState(initialCategory)
   const [from, setFrom] = useState(initialFrom)
   const [to, setTo] = useState(initialTo)
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  useEffect(() => { setFrom(initialFrom) }, [initialFrom])
+  useEffect(() => { setTo(initialTo) }, [initialTo])
+
+  const hasActiveFilters = !!(initialUserId || initialCategory || from || to)
+
+  function pushParams(overrides: Record<string, string> = {}) {
+    const merged: Record<string, string> = {
+      ...(pageSize !== DEFAULT_PAGE_SIZE && { pageSize: String(pageSize) }),
+      ...(initialUserId && { userId: initialUserId }),
+      ...(initialCategory && { category: initialCategory }),
+      ...(from && { from }),
+      ...(to && { to }),
+      ...overrides,
+    }
     const p = new URLSearchParams()
-    if (userId) p.set('userId', userId)
-    if (category) p.set('category', category)
-    if (from) p.set('from', from)
-    if (to) p.set('to', to)
+    for (const [k, v] of Object.entries(merged)) {
+      if (v) p.set(k, v)
+    }
     router.push(`/log-aktivitas?${p.toString()}`)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-end">
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-600">Pengguna</label>
-        <Select value={userId} onValueChange={(v) => setUserId(v ?? '')}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Semua Pengguna">
-              {users.find((u) => u.id === userId)?.name}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Semua Pengguna</SelectItem>
-            {users.map((u) => (
-              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex flex-wrap items-end gap-3">
+      <Select value={initialUserId} onValueChange={(v) => pushParams({ userId: v ?? '' })}>
+        <SelectTrigger className="w-44">
+          <SelectValue placeholder="Semua Pengguna" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Semua Pengguna</SelectItem>
+          {users.map((u) => (
+            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-600">Kategori</label>
-        <Select value={category} onValueChange={(v) => setCategory(v ?? '')}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Semua Kategori">
-              {CATEGORIES.find((c) => c.value === category)?.label}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Semua Kategori</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select value={initialCategory} onValueChange={(v) => pushParams({ category: v ?? '' })}>
+        <SelectTrigger className="w-44">
+          <SelectValue placeholder="Semua Kategori" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Semua Kategori</SelectItem>
+          {CATEGORIES.map((c) => (
+            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-600">Dari</label>
-        <input
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          className="h-9 rounded-lg border border-input bg-muted/40 px-3 text-sm"
-        />
-      </div>
+      <Input
+        type="date"
+        value={from}
+        onChange={(e) => setFrom(e.target.value)}
+        onBlur={() => pushParams()}
+        className="w-36"
+      />
 
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-600">Sampai</label>
-        <input
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          className="h-9 rounded-lg border border-input bg-muted/40 px-3 text-sm"
-        />
-      </div>
+      <Input
+        type="date"
+        value={to}
+        onChange={(e) => setTo(e.target.value)}
+        onBlur={() => pushParams()}
+        className="w-36"
+      />
 
-      <button
-        type="submit"
-        className="h-9 rounded-lg bg-primary px-4 text-sm font-medium text-white"
-      >
-        Filter
-      </button>
-      <a
-        href="/log-aktivitas"
-        className="h-9 rounded-lg border px-4 text-sm font-medium flex items-center"
-      >
-        Reset
-      </a>
-    </form>
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setFrom('')
+            setTo('')
+            router.push('/log-aktivitas')
+          }}
+          className="gap-1.5 text-slate-500"
+        >
+          <X className="h-3.5 w-3.5" />
+          Reset
+        </Button>
+      )}
+    </div>
   )
 }

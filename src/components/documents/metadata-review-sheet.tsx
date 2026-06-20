@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import type { ExtractionResult } from '@/lib/extract-document'
 import { MetadataForm, type MetadataFormValues } from './metadata-form'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 type Division = { id: string; name: string }
 
@@ -244,12 +245,12 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
             </DialogDescription>
           </DialogHeader>
           {duplicate && (
-            <div className="overflow-x-auto rounded-md border text-sm">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="px-3 py-2 text-left font-medium text-muted-foreground w-28">Field</th>
-                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+            <div className="rounded-xl border border-border/60 overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-28">Field</TableHead>
+                    <TableHead>
                       <div className="flex items-center gap-2">
                         Dokumen Lama
                         <button
@@ -260,8 +261,8 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
                           Lihat
                         </button>
                       </div>
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-muted-foreground">
+                    </TableHead>
+                    <TableHead>
                       <div className="flex items-center gap-2">
                         Dokumen Baru
                         {documentId && (
@@ -274,10 +275,10 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
                           </button>
                         )}
                       </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {([
                     ['Nomor', duplicate.info.documentNumber, duplicate.pendingValues.documentNumber],
                     ['Tanggal', duplicate.info.documentDate, duplicate.pendingValues.documentDate],
@@ -289,15 +290,15 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
                   ] as [string, string | null | undefined, string | null | undefined][]).map(([label, oldVal, newVal]) => {
                     const differs = (oldVal || '') !== (newVal || '')
                     return (
-                      <tr key={label} className={differs ? 'bg-amber-50' : ''}>
-                        <td className="px-3 py-2 text-muted-foreground">{label}</td>
-                        <td className={`px-3 py-2 ${differs ? 'text-destructive line-through' : ''}`}>{oldVal || <span className="text-muted-foreground/50">—</span>}</td>
-                        <td className={`px-3 py-2 ${differs ? 'font-medium' : ''}`}>{newVal || <span className="text-muted-foreground/50">—</span>}</td>
-                      </tr>
+                      <TableRow key={label} className={differs ? 'bg-amber-50 hover:bg-amber-100/60' : ''}>
+                        <TableCell className="text-muted-foreground">{label}</TableCell>
+                        <TableCell className={differs ? 'text-destructive line-through' : ''}>{oldVal || <span className="text-muted-foreground/50">—</span>}</TableCell>
+                        <TableCell className={differs ? 'font-medium' : ''}>{newVal || <span className="text-muted-foreground/50">—</span>}</TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
           <DialogFooter>
