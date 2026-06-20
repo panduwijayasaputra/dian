@@ -13,6 +13,7 @@ vi.mock('@/app/(app)/documents/actions', () => ({
 vi.mock('@/lib/idb', () => ({
   upsertDocument: vi.fn(),
   deleteDocument: vi.fn(),
+  getDocument: vi.fn(),
 }))
 
 // next/navigation used by child components
@@ -21,12 +22,13 @@ vi.mock('next/navigation', () => ({
 }))
 
 import { extractDocumentMetadata, saveDocumentMetadata } from '@/app/(app)/documents/actions'
-import { upsertDocument } from '@/lib/idb'
+import { upsertDocument, getDocument } from '@/lib/idb'
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(upsertDocument).mockResolvedValue(undefined)
   vi.mocked(saveDocumentMetadata).mockResolvedValue({ success: true, document: {} as never })
+  vi.mocked(getDocument).mockResolvedValue(undefined)
 })
 
 describe('MetadataReviewSheet — online (isLocal=false)', () => {
@@ -81,6 +83,54 @@ describe('MetadataReviewSheet — offline (isLocal=true)', () => {
     await waitFor(() =>
       expect(screen.getByText('Simpan Dokumen')).toBeInTheDocument()
     )
+  })
+
+  it('preserves existing file_blob when saving metadata for a local document', async () => {
+    const fakeBlob = new Blob(['%PDF-fake'], { type: 'application/pdf' })
+    vi.mocked(getDocument).mockResolvedValue({
+      id: 'local-abc',
+      document_number: null,
+      document_date: null,
+      sender: null,
+      receiver: null,
+      subject: null,
+      urgency: null,
+      security: null,
+      deadline_start: null,
+      deadline_end: null,
+      memo: null,
+      summary: null,
+      extracted_text: null,
+      extraction_status: 'pending',
+      status: 'pending_sync',
+      r2_key: null,
+      file_blob: fakeBlob,
+      original_name: 'surat.pdf',
+      created_at: new Date().toISOString(),
+      synced_at: null,
+      division_ids: [],
+    })
+
+    const user = userEvent.setup()
+    render(
+      <MetadataReviewSheet
+        open
+        documentId="local-abc"
+        onClose={() => {}}
+        isLocal
+      />
+    )
+
+    await waitFor(() => screen.getByText('Simpan Dokumen'))
+    await user.type(screen.getByLabelText(/nomor dokumen/i), 'NO-003/2025')
+    await user.type(screen.getByLabelText(/perihal/i), 'Uji Preservasi Blob')
+    await user.click(screen.getByRole('button', { name: /simpan dokumen/i }))
+
+    await waitFor(() => {
+      expect(upsertDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ file_blob: fakeBlob })
+      )
+    })
   })
 
   it('saves metadata to IDB instead of calling saveDocumentMetadata', async () => {

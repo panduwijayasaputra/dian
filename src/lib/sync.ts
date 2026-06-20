@@ -1,6 +1,6 @@
 import { deleteDocument, getDocument, listDocuments, upsertDocument, type LocalDocument } from '@/lib/idb'
 import { uploadDocument } from '@/app/(app)/upload/actions'
-import { getDocumentsForSync, saveDocumentMetadata } from '@/app/(app)/documents/actions'
+import { extractDocumentMetadata, getDocumentsForSync, saveDocumentMetadata } from '@/app/(app)/documents/actions'
 
 function toMetadataValues(doc: LocalDocument) {
   return {
@@ -58,6 +58,7 @@ export async function uploadPending(): Promise<{ uploaded: number; failed: numbe
         if (hasMetadata) {
           await saveDocumentMetadata(result.documentId, toMetadataValues(doc))
         }
+        extractDocumentMetadata(result.documentId).catch(() => {})
         uploaded++
       } else {
         console.warn('[sync] upload failed for document', doc.id, result.error)

@@ -9,7 +9,7 @@ import {
   getDocumentViewUrl,
   type DuplicateInfo,
 } from '@/app/(app)/documents/actions'
-import { upsertDocument, deleteDocument as idbDeleteDocument } from '@/lib/idb'
+import { upsertDocument, getDocument as idbGetDocument, deleteDocument as idbDeleteDocument } from '@/lib/idb'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -127,6 +127,7 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
     setError(null)
 
     if (isLocal) {
+      const existing = await idbGetDocument(documentId)
       await upsertDocument({
         id: documentId,
         document_number: values.documentNumber || null,
@@ -139,14 +140,14 @@ export function MetadataReviewSheet({ open, documentId, onClose, divisions, isLo
         deadline_start: values.deadlineStart || null,
         deadline_end: values.deadlineEnd || null,
         memo: values.memo || null,
-        summary: null,
-        extracted_text: null,
-        extraction_status: 'pending',
+        summary: existing?.summary ?? null,
+        extracted_text: existing?.extracted_text ?? null,
+        extraction_status: existing?.extraction_status ?? 'pending',
         status: 'pending_sync',
         r2_key: null,
-        file_blob: null,
-        original_name: null,
-        created_at: new Date().toISOString(),
+        file_blob: existing?.file_blob ?? null,
+        original_name: existing?.original_name ?? null,
+        created_at: existing?.created_at ?? new Date().toISOString(),
         synced_at: null,
         division_ids: values.divisionIds ?? [],
       })

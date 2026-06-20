@@ -97,15 +97,16 @@ function NavLinks({ isAdmin, pathname, onNavigate }: { isAdmin: boolean; pathnam
   )
 }
 
-function SidebarBody({ isAdmin, userName, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
+export function SidebarBody({ isAdmin, userName, onNavigate }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
     <div className="flex h-full flex-col bg-white">
       <div className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
-          <span className="text-xs font-bold text-white">D</span>
+        <FileText className="h-8 w-8 shrink-0 text-primary" />
+        <div className="flex flex-col leading-tight">
+          <span className="text-base font-semibold tracking-tight text-slate-900">DIAN</span>
+          <span className="text-[10px] text-slate-400 tracking-wide">Document Intelligence Archive Network</span>
         </div>
-        <span className="text-base font-semibold tracking-tight text-slate-900">DIAN</span>
       </div>
 
       <NavLinks isAdmin={isAdmin} pathname={pathname} onNavigate={onNavigate} />
@@ -160,9 +161,7 @@ export function MobileTopBar({ isAdmin, userName }: SidebarProps) {
         </SheetContent>
       </Sheet>
       <div className="ml-3 flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary">
-          <span className="text-[10px] font-bold text-white">D</span>
-        </div>
+        <FileText className="h-5 w-5 text-primary" />
         <span className="text-sm font-semibold text-slate-900">DIAN</span>
       </div>
     </div>

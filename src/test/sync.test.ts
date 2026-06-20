@@ -15,11 +15,12 @@ vi.mock('@/app/(app)/upload/actions', () => ({
 vi.mock('@/app/(app)/documents/actions', () => ({
   getDocumentsForSync: vi.fn(),
   saveDocumentMetadata: vi.fn(),
+  extractDocumentMetadata: vi.fn(),
 }))
 
 import { listDocuments, deleteDocument, upsertDocument } from '@/lib/idb'
 import { uploadDocument } from '@/app/(app)/upload/actions'
-import { getDocumentsForSync, saveDocumentMetadata } from '@/app/(app)/documents/actions'
+import { getDocumentsForSync, saveDocumentMetadata, extractDocumentMetadata } from '@/app/(app)/documents/actions'
 import { uploadPending, downloadAll } from '@/lib/sync'
 
 const pendingDoc: LocalDocument = {
@@ -83,6 +84,29 @@ describe('uploadPending', () => {
     await uploadPending()
 
     expect(saveDocumentMetadata).not.toHaveBeenCalled()
+  })
+
+  it('triggers extractDocumentMetadata after successful upload', async () => {
+    vi.mocked(listDocuments).mockResolvedValue([pendingDoc])
+    vi.mocked(uploadDocument).mockResolvedValue({ success: true, documentId: 'server-xyz' })
+    vi.mocked(saveDocumentMetadata).mockResolvedValue({ success: true, document: {} as never })
+    vi.mocked(extractDocumentMetadata).mockResolvedValue({ success: true } as never)
+
+    await uploadPending()
+
+    expect(extractDocumentMetadata).toHaveBeenCalledWith('server-xyz')
+  })
+
+  it('does not fail sync when extractDocumentMetadata rejects', async () => {
+    vi.mocked(listDocuments).mockResolvedValue([pendingDoc])
+    vi.mocked(uploadDocument).mockResolvedValue({ success: true, documentId: 'server-xyz' })
+    vi.mocked(saveDocumentMetadata).mockResolvedValue({ success: true, document: {} as never })
+    vi.mocked(extractDocumentMetadata).mockRejectedValue(new Error('OpenAI timeout'))
+
+    const result = await uploadPending()
+
+    expect(result.uploaded).toBe(1)
+    expect(result.failed).toBe(0)
   })
 
   it('skips docs without a file_blob', async () => {
