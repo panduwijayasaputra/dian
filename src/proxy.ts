@@ -9,13 +9,20 @@ export async function proxy(req: NextRequest) {
   })
 
   const isLoggedIn = !!token
-  const isLoginPage = req.nextUrl.pathname === '/login'
+  const { pathname } = req.nextUrl
 
-  if (!isLoggedIn && !isLoginPage) {
+  const isPublicPath =
+    pathname === '/login' ||
+    pathname === '/offline' ||
+    pathname === '/sw.js' ||
+    pathname === '/manifest.json' ||
+    pathname.startsWith('/icons')
+
+  if (!isLoggedIn && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
 
-  if (isLoggedIn && isLoginPage) {
+  if (isLoggedIn && pathname === '/login') {
     return NextResponse.redirect(new URL('/', req.nextUrl))
   }
 

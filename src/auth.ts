@@ -14,11 +14,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null
 
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username as string },
-        })
+        let user
+        try {
+          user = await prisma.user.findUnique({
+            where: { username: credentials.username as string },
+          })
+        } catch (err) {
+          console.error('[auth] DB error during findUnique:', err)
+          return null
+        }
 
         if (!user) {
+          console.error('[auth] User not found:', credentials.username)
           await logActivity({
             action: 'AUTH_LOGIN_FAILED',
             information: `Username tidak ditemukan: ${credentials.username}`,
@@ -28,6 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const valid = await bcrypt.compare(credentials.password as string, user.passwordHash)
         if (!valid) {
+          console.error('[auth] Invalid password for:', user.username)
           await logActivity({
             userId: user.id,
             action: 'AUTH_LOGIN_FAILED',
