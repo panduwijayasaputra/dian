@@ -2,10 +2,11 @@ import { getToken } from 'next-auth/jwt'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function proxy(req: NextRequest) {
+  const secureCookie = req.nextUrl.protocol === 'https:'
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET,
-    cookieName: 'authjs.session-token',
+    cookieName: secureCookie ? '__Secure-authjs.session-token' : 'authjs.session-token',
   })
 
   const isLoggedIn = !!token
