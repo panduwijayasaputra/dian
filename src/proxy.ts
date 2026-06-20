@@ -1,16 +1,9 @@
-import { getToken } from 'next-auth/jwt'
-import { NextResponse, type NextRequest } from 'next/server'
+import { auth } from '@/auth'
+import { NextResponse } from 'next/server'
 
-export async function proxy(req: NextRequest) {
-  const secureCookie = req.nextUrl.protocol === 'https:'
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-    cookieName: secureCookie ? '__Secure-authjs.session-token' : 'authjs.session-token',
-  })
-
-  const isLoggedIn = !!token
+export const proxy = auth((req) => {
   const { pathname } = req.nextUrl
+  const isLoggedIn = !!req.auth
 
   const isPublicPath =
     pathname === '/login' ||
@@ -27,15 +20,15 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.nextUrl))
   }
 
-  const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
-  const isUploadRoute = req.nextUrl.pathname.startsWith('/upload')
+  const isAdminRoute = pathname.startsWith('/admin')
+  const isUploadRoute = pathname.startsWith('/upload')
 
-  if (isLoggedIn && (isAdminRoute || isUploadRoute) && token.role !== 'ADMIN') {
+  if (isLoggedIn && (isAdminRoute || isUploadRoute) && req.auth?.user?.role !== 'ADMIN') {
     return NextResponse.redirect(new URL('/documents', req.nextUrl))
   }
 
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon\\.ico).*)'],
