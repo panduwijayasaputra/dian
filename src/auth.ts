@@ -85,10 +85,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
     session({ session, token }) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const t = token as any
       session.user.id = token.sub!
-      session.user.role = token.role
-      session.user.divisionId = token.divisionId
-      session.user.isActive = token.isActive
+      session.user.role = t.role
+      session.user.divisionId = t.divisionId
+      session.user.isActive = t.isActive
       return session
     },
   },
